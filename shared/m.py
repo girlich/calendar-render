@@ -31,20 +31,8 @@ def collectMonth(year, month, first):
             cols=[]
     return rows
 
-def printMonth(rows):
-    for row in rows:
-        line = ""
-        width = 3
-        for cell in row:
-            value = cell['value']
-            if 'justify' in cell and cell['justify'] == 'right':
-                value = value.rjust(width)
-            else:
-                value = value.ljust(width)
-            line = line + value + " "
-        print(line)
-
-def collectYear(year, first):
+def collectYear(year, first, _locale):
+    locale.setlocale(locale.LC_ALL, _locale)
     cal={}
     cal['year'] = year
     cal['months'] = []
@@ -56,11 +44,24 @@ def collectYear(year, first):
         cal['months'].append(m)
     return cal
 
+def printMonth(month):
+    print("month={}".format(month['name']))
+    for row in month['cells']:
+        line = ""
+        width = 3
+        for cell in row:
+            value = cell['value']
+            if 'justify' in cell and cell['justify'] == 'right':
+                value = value.rjust(width)
+            else:
+                value = value.ljust(width)
+            line = line + value + " "
+        print(line)
+
 def printYear(cal):
     print("year={}".format(cal['year']))
     for month in cal['months']:
-        print("month={}".format(month['name']))
-        printMonth(month['cells'])
+        printMonth(month)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -68,8 +69,8 @@ def main():
     parser.add_argument("--first", help="first day of the week (0=monday)", type=int, default=0)
     parser.add_argument("--locale", help="locale (default de_DE)", type=str, default="de_DE")
     args = parser.parse_args()
-    locale.setlocale(locale.LC_ALL, args.locale)
-    cal=collectYear(args.year, (args.first % 7))
+
+    cal=collectYear(args.year, (args.first % 7), args.locale)
     printYear(cal)
 
 if __name__ == "__main__":
