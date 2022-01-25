@@ -44,8 +44,19 @@ def collectYear(year, first, _locale):
         cal['months'].append(m)
     return cal
 
+def fillEmptyLines(cal, minLines):
+    for month in cal['months']:
+        while len(month['cells']) < minLines:
+            cols=[]
+            for i in range(1,8):
+                cell={}
+                cell['value']='xx'
+                cols.append(cell)
+            month['cells'].append(cols)
+    return cal
+
 def printMonth(month):
-    print("month={}".format(month['name']))
+    print(" {}".format(month['name']))
     for row in month['cells']:
         line = ""
         width = 3
@@ -59,7 +70,7 @@ def printMonth(month):
         print(line)
 
 def printYear(cal):
-    print("year={}".format(cal['year']))
+    print("{}".format(cal['year']))
     for month in cal['months']:
         printMonth(month)
 
@@ -71,6 +82,8 @@ def main():
     args = parser.parse_args()
 
     cal=collectYear(args.year, (args.first % 7), args.locale)
+    printYear(cal)
+    cal=fillEmptyLines(cal, 6)
     printYear(cal)
 
 if __name__ == "__main__":
