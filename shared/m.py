@@ -11,16 +11,22 @@ def collectMonth(year, month, first):
     rows=[]
     cols=[]
     for dayOfWeek in cal.iterweekdays():
-        cols.append(calendar.day_name[dayOfWeek][:2])
+        cell={}
+        cell['value']=calendar.day_name[dayOfWeek][:2]
+        cell['format']='bold'
+        cols.append(cell)
     rows.append(cols)
     cols=[]
     for (dayOfMonth, dayOfWeek) in cal.itermonthdays2(year, month):
+        cell={}
         if dayOfMonth != 0:
-            cols.append("{:2d}".format(dayOfMonth))
+            cell['value']=str(dayOfMonth)
+            cell['justify']='right'
+            # cols.append("{:2d}".format(dayOfMonth))
         else:
-            cols.append("  ")
+            cell['value']='<>'
+        cols.append(cell)
         if dayOfWeek==last:
-            line = " ".join(cols)
             rows.append(cols)
             cols=[]
     return rows
@@ -28,8 +34,14 @@ def collectMonth(year, month, first):
 def printMonth(rows):
     for row in rows:
         line = ""
-        for col in row:
-            line = line + col + " "
+        width = 3
+        for cell in row:
+            value = cell['value']
+            if 'justify' in cell and cell['justify'] == 'right':
+                value = value.rjust(width)
+            else:
+                value = value.ljust(width)
+            line = line + value + " "
         print(line)
 
 def collectYear(year, first):
