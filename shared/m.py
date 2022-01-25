@@ -24,7 +24,7 @@ def collectMonth(year, month, first):
             cell['justify']='right'
             # cols.append("{:2d}".format(dayOfMonth))
         else:
-            cell['value']='<>'
+            cell['empty']=True
         cols.append(cell)
         if dayOfWeek==last:
             rows.append(cols)
@@ -50,18 +50,32 @@ def fillEmptyLines(cal, minLines):
             cols=[]
             for i in range(1,8):
                 cell={}
-                cell['value']='xx'
+                cell['empty']=True
                 cols.append(cell)
             month['cells'].append(cols)
+    return cal
+
+def compressShortLines(cal, maxLines):
+    for month in cal['months']:
+        while len(month['cells']) > maxLines:
+            lastLineNumber = len(month['cells'])-1
+            for i in range(len(month['cells'][lastLineNumber])):
+                if 'value' in month['cells'][lastLineNumber][i]:
+                    month['cells'][lastLineNumber-1][i]['value'] += "/" + \
+                      month['cells'][lastLineNumber][i]['value']
+            month['cells'].pop()
     return cal
 
 def printMonth(month):
     print(" {}".format(month['name']))
     for row in month['cells']:
         line = ""
-        width = 3
+        width = 5
         for cell in row:
-            value = cell['value']
+            if 'empty' in cell:
+                value = "<>"
+            else:
+                value = cell['value']
             if 'justify' in cell and cell['justify'] == 'right':
                 value = value.rjust(width)
             else:
@@ -82,8 +96,13 @@ def main():
     args = parser.parse_args()
 
     cal=collectYear(args.year, (args.first % 7), args.locale)
+    print("ORIG")
     printYear(cal)
     cal=fillEmptyLines(cal, 6)
+    print("EMPTY LINES AT END")
+    printYear(cal)
+    cal=compressShortLines(cal, 6)
+    print("COMPRESSED LAST LINE")
     printYear(cal)
 
 if __name__ == "__main__":
