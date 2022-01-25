@@ -45,11 +45,22 @@ def printMonth(rows):
         print(line)
 
 def collectYear(year, first):
-    print("year={} first={}".format(year, first))
+    cal={}
+    cal['year'] = year
+    cal['months'] = []
     for month in range(1, 13):
+        m = {}
+        m['name'] = calendar.month_name[month]
         monthArray = collectMonth(year, month, first)
-        print("month={}".format(month))
-        printMonth(monthArray)
+        m['cells'] = monthArray
+        cal['months'].append(m)
+    return cal
+
+def printYear(cal):
+    print("year={}".format(cal['year']))
+    for month in cal['months']:
+        print("month={}".format(month['name']))
+        printMonth(month['cells'])
 
 def main():
     parser = argparse.ArgumentParser()
@@ -58,7 +69,8 @@ def main():
     parser.add_argument("--locale", help="locale (default de_DE)", type=str, default="de_DE")
     args = parser.parse_args()
     locale.setlocale(locale.LC_ALL, args.locale)
-    collectYear(args.year, (args.first % 7))
+    cal=collectYear(args.year, (args.first % 7))
+    printYear(cal)
 
 if __name__ == "__main__":
     main()
