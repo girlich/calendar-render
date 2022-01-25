@@ -5,15 +5,14 @@ import calendar
 import locale
 
 def collectMonth(year, month, first):
-    print("year={} month={}".format(year, month))
     cal = calendar.Calendar()
     cal.setfirstweekday(first)
     last = (first + 6) % 7
-    # print("first={} last={}".format(first, last))
+    rows=[]
     cols=[]
     for dayOfWeek in cal.iterweekdays():
         cols.append(calendar.day_name[dayOfWeek][:2])
-    print(" ".join(cols))
+    rows.append(cols)
     cols=[]
     for (dayOfMonth, dayOfWeek) in cal.itermonthdays2(year, month):
         if dayOfMonth != 0:
@@ -22,13 +21,23 @@ def collectMonth(year, month, first):
             cols.append("  ")
         if dayOfWeek==last:
             line = " ".join(cols)
-            print(line)
+            rows.append(cols)
             cols=[]
+    return rows
+
+def printMonth(rows):
+    for row in rows:
+        line = ""
+        for col in row:
+            line = line + col + " "
+        print(line)
 
 def collectYear(year, first):
     print("year={} first={}".format(year, first))
     for month in range(1, 13):
-        collectMonth(year, month, first)
+        monthArray = collectMonth(year, month, first)
+        print("month={}".format(month))
+        printMonth(monthArray)
 
 def main():
     parser = argparse.ArgumentParser()
