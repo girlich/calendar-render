@@ -11,8 +11,43 @@ sys.path.insert(0, parentdir)
 
 from shared import m
 
-def drawHalfMonth(month, cal, dwg, x, y, upper_half):
+def drawRectangle(dwg, x, y, width, height):
     from svgwrite import mm
+    dwg.add(
+        dwg.rect((x*mm, y*mm), (width*mm, height*mm),
+            stroke='black',
+            stroke_width=0.5*mm,
+            fill='none'
+        )
+    )
+
+def drawText(dwg, text, size, justify, x, y, width, height):
+    from svgwrite import mm
+    drawRectangle(dwg, x, y, width, height)
+    if justify=='left':
+        text_anchor='start'
+        xt=x
+    elif justify=='right':
+        text_anchor='end'
+        xt=x+width
+    else:
+        text_anchor='middle'
+        xt=x+width/2
+    yt=y+height/2
+    dwg.add(
+        dwg.text(text,
+            stroke='black',
+            fill='black',
+            insert=(xt*mm, yt*mm ),
+            font_size=size,
+            font_family='sans-serif',
+            font_weight='lighter',
+            text_anchor=text_anchor,
+            dominant_baseline='central'
+        )
+    )
+
+def drawHalfMonth(month, cal, dwg, x, y, upper_half):
     print("month={}".format(month))
     for row_index, row in enumerate(cal['months'][month]['cells']):
         if upper_half and row_index < 3:
@@ -25,50 +60,15 @@ def drawHalfMonth(month, cal, dwg, x, y, upper_half):
                 continue
             value = cell['value']
             if 'justify' in cell and cell['justify'] == 'right':
-                text_anchor='end'
+                justify=cell['justify']
             else:
-                text_anchor='start'
-            dwg.add(
-                dwg.text(value,
-                    stroke='black',
-                    fill='black',
-                    insert=((x+5*col_index)*mm,(y+5*row_index)*mm),
-                    font_size='10px',
-                    font_family='sans-serif',
-                    font_weight='lighter',
-                    text_anchor=text_anchor
-                )
-            )
+                justify='left'
+            drawText(dwg, value, '10px', justify, x+5*col_index, y+5*row_index, 5, 5)
 
 def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
-    from svgwrite import mm
-    dwg.add(
-        dwg.rect((xpos*mm, ypos*mm), (xsize*mm, ysize*mm),
-            stroke='black',
-            stroke_width=0.5*mm,
-            fill='none'
-        )
-    )
-    dwg.add(
-        dwg.text(cal['year'],
-            stroke='black',
-            fill='black',
-            insert=((xpos + xsize/2)*mm, (ypos + 10)*mm ),
-            font_size='20px',
-            font_family='sans-serif',
-            font_weight='lighter'
-        )
-    )
-    dwg.add(
-        dwg.text(cal['months'][month]['name'],
-            stroke='black',
-            fill='black',
-            insert=((xpos + xsize/2)*mm, (ypos + 30)*mm ),
-            font_size='20px',
-            font_family='sans-serif',
-            font_weight='lighter'
-        )
-    )
+    drawRectangle(dwg, xpos, ypos, xsize, ysize)
+    drawText(dwg, cal['year'], '20px', 'left', xpos + xsize/2, ypos + 10, 30, 15)
+    drawText(dwg, cal['months'][month]['name'], '20px', 'left', xpos + xsize/2, ypos + 30, 30, 15)
     x = xpos + xsize//2
     y = ypos + ysize//2
     drawHalfMonth(month, cal, dwg, x, y, True)
