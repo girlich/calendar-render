@@ -11,8 +11,37 @@ sys.path.insert(0, parentdir)
 
 from shared import m
 
+def drawHalfMonth(month, cal, dwg, x, y, upper_half):
+    from svgwrite import mm
+    print("month={}".format(month))
+    for row_index, row in enumerate(cal['months'][month]['cells']):
+        if upper_half and row_index < 3:
+            continue
+        if not upper_half and row_index >= 3:
+            continue
+        width = 5
+        for col_index, cell in enumerate(row):
+            if 'empty' in cell:
+                continue
+            value = cell['value']
+            if 'justify' in cell and cell['justify'] == 'right':
+                text_anchor='end'
+            else:
+                text_anchor='start'
+            dwg.add(
+                dwg.text(value,
+                    stroke='black',
+                    fill='black',
+                    insert=((x+5*col_index)*mm,(y+5*row_index)*mm),
+                    font_size='10px',
+                    font_family='sans-serif',
+                    font_weight='lighter',
+                    text_anchor=text_anchor
+                )
+            )
+
 def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
-    from svgwrite import cm, mm
+    from svgwrite import mm
     dwg.add(
         dwg.rect((xpos*mm, ypos*mm), (xsize*mm, ysize*mm),
             stroke='black',
@@ -40,6 +69,11 @@ def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
             font_weight='lighter'
         )
     )
+    x = xpos + xsize//2
+    y = ypos + ysize//2
+    drawHalfMonth(month, cal, dwg, x, y, True)
+    drawHalfMonth(11-month, cal, dwg, x, y, False)
+
 
 def generateSVG(cal):
     import svgwrite
