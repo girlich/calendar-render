@@ -11,37 +11,52 @@ sys.path.insert(0, parentdir)
 
 from shared import m
 
-def generateSVG(page):
-    import svgwrite
+def drawMonth(month, dwg, xpos, ypos, xsize, ysize):
     from svgwrite import cm, mm
+    dwg.add(
+        dwg.rect((xpos*mm, ypos*mm), (xsize*mm, ysize*mm),
+            stroke='black',
+            stroke_width=0.5*mm,
+            fill='none'
+        )
+    )
+
+def generateSVG():
+    import svgwrite
+    from svgwrite import mm
     import math
+
     page_width=210
     page_height=297
-    dwg = svgwrite.Drawing('tmp.svg', size=(page_width*mm,page_height*mm))
-
-    rows = 2
-    cols = 3
 
     width=60
     height=width*math.sqrt(3)
+    
+    months = 12
+    rows = 2
+    cols = 3
+    months_per_page = rows * cols
+    pages = months // months_per_page
 
     xoffset = ( page_width - cols*width ) / 2
     yoffset = ( page_height - rows*height) / 2
 
-    for i in range(cols):
-        for j in range(rows):
-            dwg.add(
-                dwg.rect(((xoffset+i*width)*mm, (yoffset+j*height)*mm), (width*mm, height*mm),
-                    stroke='black',
-                    stroke_width=0.5*mm,
-                    fill='none'
-                )
-            )
-    dwg.save()
+    d=[]
+    for page in range(pages):
+        d.append(svgwrite.Drawing('page-{}.svg'.format(page), size=(page_width*mm,page_height*mm)))
+
+    for month in range(months):
+        p = month // months_per_page
+        i = month%cols
+        j = (month%months_per_page)%rows
+
+        drawMonth(month, d[p], xoffset+i*width, yoffset+j*height, width, height)
+    
+    for page in range(pages):
+        d[page].save()
 
 def generatePDF():
-    generateSVG(1)
-    generateSVG(2)
+    generateSVG()
 
 def main():
     parser = argparse.ArgumentParser()
