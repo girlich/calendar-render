@@ -11,7 +11,7 @@ sys.path.insert(0, parentdir)
 
 from shared import m
 
-def drawMonth(month, dwg, xpos, ypos, xsize, ysize):
+def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     from svgwrite import cm, mm
     dwg.add(
         dwg.rect((xpos*mm, ypos*mm), (xsize*mm, ysize*mm),
@@ -20,8 +20,28 @@ def drawMonth(month, dwg, xpos, ypos, xsize, ysize):
             fill='none'
         )
     )
+    dwg.add(
+        dwg.text(cal['year'],
+            stroke='black',
+            fill='black',
+            insert=((xpos + xsize/2)*mm, (ypos + 10)*mm ),
+            font_size='20px',
+            font_family='sans-serif',
+            font_weight='lighter'
+        )
+    )
+    dwg.add(
+        dwg.text(cal['months'][month]['name'],
+            stroke='black',
+            fill='black',
+            insert=((xpos + xsize/2)*mm, (ypos + 30)*mm ),
+            font_size='20px',
+            font_family='sans-serif',
+            font_weight='lighter'
+        )
+    )
 
-def generateSVG():
+def generateSVG(cal):
     import svgwrite
     from svgwrite import mm
     import math
@@ -48,15 +68,17 @@ def generateSVG():
     for month in range(months):
         p = month // months_per_page
         i = month%cols
-        j = (month%months_per_page)%rows
+        j = rows - 1 - (month%months_per_page) // cols
+        part = (month%months_per_page)
+        print("p={} m={} i={} j={} part={}".format(p, month, i, j, part))
 
-        drawMonth(month, d[p], xoffset+i*width, yoffset+j*height, width, height)
+        drawMonth(month, cal, d[p], xoffset+i*width, yoffset+j*height, width, height)
     
     for page in range(pages):
         d[page].save()
 
-def generatePDF():
-    generateSVG()
+def generatePDF(cal):
+    generateSVG(cal)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -74,7 +96,7 @@ def main():
     cal=m.compressShortLines(cal, 6)
     print("COMPRESSED LAST LINE")
     m.printYear(cal)
-    generatePDF()
+    generatePDF(cal)
 
 
 
