@@ -47,6 +47,75 @@ def drawText(dwg, text, size, justify, x, y, width, height):
         )
     )
 
+def drawTextToImage(filename, text, width, height):
+    print(text)
+    from wand.image import Image
+    from wand.color import Color
+    from wand.font import Font
+    from wand.drawing import Drawing
+    font_size = 40
+    text_color = 'black'
+    font_path = '/usr/share/fonts/texlive-gnu-freefont/FreeSans.otf'
+    with Image(width=width*20, height=height*20, background=Color('transparent')) as img:
+        # Create a drawing context
+        with Drawing() as draw:
+            # Set the font size, color, and shape
+            draw.font_size = font_size
+            draw.text_color = Color(text_color)
+            draw.font = font_path
+
+            # Calculate the position to center the text
+            font_metrics = draw.get_font_metrics(img, text)
+            x = round((img.width - font_metrics.text_width) / 2)
+            text_height = font_metrics.ascender - font_metrics.descender
+            # print(font_metrics.ascender, font_metrics.descender, text_height, img.height)
+            y = round((img.height - text_height) / 2 + font_metrics.ascender)
+            # print(y)
+
+            # Draw the text
+            draw.text(x, y, text)
+
+            # Apply all drawing operations on the image
+            draw(img)
+
+        img.save(filename=filename)
+
+def drawTextImage(dwg, text, size, justify, x, y, width, height):
+    from svgwrite import mm
+    drawRectangle(dwg, x, y, width, height)
+    if justify=='left':
+        text_anchor='start'
+        xt=x
+    elif justify=='right':
+        text_anchor='end'
+        xt=x+width
+    else:
+        text_anchor='middle'
+        xt=x+width/2
+    yt=y+height/2
+    
+    dwg.add(
+        dwg.text(text,
+            stroke='black',
+            fill='black',
+            insert=(xt*mm, yt*mm ),
+            font_size=size,
+            font_family='sans-serif',
+            font_weight='lighter',
+            text_anchor=text_anchor,
+            dominant_baseline='central'
+        )
+    )
+    filename='tmp.png'
+    drawTextToImage(filename, text, width, height)
+    dwg.add(
+        dwg.image(filename,
+            insert=(x*mm, y*mm ),
+            size=(width*mm, height*mm)
+        )
+    )
+
+
 def drawHalfMonth(month, cal, dwg, x, y, upper_half):
     print("month={}".format(month))
     for row_index, row in enumerate(cal['months'][month]['cells']):
@@ -63,7 +132,8 @@ def drawHalfMonth(month, cal, dwg, x, y, upper_half):
                 justify=cell['justify']
             else:
                 justify='left'
-            drawText(dwg, value, '10px', justify, x+5*col_index, y+5*row_index, 5, 5)
+            # drawText(dwg, value, '10px', justify, x+5*col_index, y+5*row_index, 5, 5)
+            drawTextImage(dwg, value, '10px', justify, x+5*col_index, y+5*row_index, 5, 5)
 
 def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     drawRectangle(dwg, xpos, ypos, xsize, ysize)

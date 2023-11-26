@@ -6,7 +6,8 @@ venv: $(V)/touchfile
 
 $(V)/touchfile: requirements.txt
 	test -d $(V) || python3 -m venv $(V)
-	. $(V)/bin/activate; pip install -Ur requirements.txt
+	. $(V)/bin/activate ; python3 -m pip install --upgrade pip
+	. $(V)/bin/activate ; pip install -Ur requirements.txt
 	touch $@
 
 activate:
@@ -16,5 +17,8 @@ deactivate:
 	$(V)/bin/deactivate
 
 test:
-	. $(V)/bin/activate ; python ./mennorode.py 2022
+	. $(V)/bin/activate ; python ./mennorode.py 2024
+
+ta:
+	. $(V)/bin/activate ; python ./a.py
 
