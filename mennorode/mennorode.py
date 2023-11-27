@@ -4,6 +4,7 @@ import argparse
 import inspect
 import os
 import sys
+import drawsvg as draw
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -12,17 +13,15 @@ sys.path.insert(0, parentdir)
 from shared import m
 
 def drawRectangle(dwg, x, y, width, height):
-    from svgwrite import mm
-    dwg.add(
-        dwg.rect((x*mm, y*mm), (width*mm, height*mm),
+    dwg.append(
+        dwg.Rectangle(x, y, width, height,
             stroke='black',
-            stroke_width=0.5*mm,
+            stroke_width=0.5,
             fill='none'
         )
     )
 
 def drawText(dwg, text, size, justify, x, y, width, height):
-    from svgwrite import mm
     drawRectangle(dwg, x, y, width, height)
     if justify=='left':
         text_anchor='start'
@@ -34,16 +33,16 @@ def drawText(dwg, text, size, justify, x, y, width, height):
         text_anchor='middle'
         xt=x+width/2
     yt=y+height/2
-    dwg.add(
-        dwg.text(text,
+    dwg.append(
+        dwg.Text(text,
             stroke='black',
             fill='black',
-            insert=(xt*mm, yt*mm ),
+            x=xt, y=yt,
             font_size=size,
             font_family='sans-serif',
             font_weight='lighter',
+            dominant_baseline='middle',
             text_anchor=text_anchor,
-            dominant_baseline='central'
         )
     )
 
@@ -81,7 +80,6 @@ def drawTextToImage(filename, text, width, height):
         img.save(filename=filename)
 
 def drawTextImage(dwg, text, size, justify, x, y, width, height):
-    from svgwrite import mm
     drawRectangle(dwg, x, y, width, height)
     if justify=='left':
         text_anchor='start'
@@ -94,24 +92,23 @@ def drawTextImage(dwg, text, size, justify, x, y, width, height):
         xt=x+width/2
     yt=y+height/2
     
-    dwg.add(
-        dwg.text(text,
+    dwg.append(
+        dwg.Text(text,
             stroke='black',
             fill='black',
-            insert=(xt*mm, yt*mm ),
+            x=xt, y=yt,
             font_size=size,
             font_family='sans-serif',
             font_weight='lighter',
+            dominant_baseline='middle',
             text_anchor=text_anchor,
-            dominant_baseline='central'
         )
     )
     filename='tmp.png'
     drawTextToImage(filename, text, width, height)
-    dwg.add(
-        dwg.image(filename,
-            insert=(x*mm, y*mm ),
-            size=(width*mm, height*mm)
+    dwg.append(
+        dwg.Image(x, y, width, height, filename,
+            embed=True
         )
     )
 
@@ -146,8 +143,6 @@ def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
 
 
 def generateSVG(cal):
-    import svgwrite
-    from svgwrite import mm
     import math
 
     page_width=210
@@ -167,7 +162,7 @@ def generateSVG(cal):
 
     d=[]
     for page in range(pages):
-        d.append(svgwrite.Drawing('page-{}.svg'.format(page), size=(page_width*mm,page_height*mm)))
+        d.append(draw.Drawing(page_width, page_height))
 
     for month in range(months):
         p = month // months_per_page
@@ -179,7 +174,8 @@ def generateSVG(cal):
         drawMonth(month, cal, d[p], xoffset+i*width, yoffset+j*height, width, height)
     
     for page in range(pages):
-        d[page].save()
+        with open('page-{}.svg'.format(page),'w') as writer:
+            writer.write(d[page].as_svg())
 
 def generatePDF(cal):
     generateSVG(cal)
