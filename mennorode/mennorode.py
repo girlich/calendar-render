@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
 import argparse
+from collections import namedtuple
 import inspect
+from itertools import chain
 import math
 import os
 import sys
@@ -92,6 +94,32 @@ class ImageDraw:
         # print(self.image.resolution)
         self.image.save(filename=filename)
 
+    def rotate(self, degrees=30):
+        self.image.rotate(degrees)
+
+    def deformDown(self):
+        print(self.image[0][0])
+        self.image[0][0]=Color('red')
+        for x in range(10):
+            for y in range(10):
+               self.image[y][x]=Color('red')
+        self.image.background_color = Color('transparent')
+        self.image.virtual_pixel = 'background'
+        Point = namedtuple('Point', ['x', 'y', 'i', 'j'])
+        # print("im({},{})".format(self.image.width, self.image.height))
+        order = 1.5
+        alpha = Point(0, 0, 0, 0)
+        beta = Point(0, self.image.height, 0, self.image.height)
+        gamma = Point(self.image.width, self.image.height, self.image.width, self.image.height)
+        delta = Point(self.image.width, 0, self.image.width, self.image.height*1)
+        args = (
+            alpha.x, alpha.y, alpha.i, alpha.j,
+            beta.x, beta.y, beta.i, beta.j,
+            gamma.x, gamma.y, gamma.i, gamma.j,
+            delta.x, delta.y, delta.i, delta.j,
+        )
+        self.image.distort('bilinear_forward', args)
+
 def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
     print("month={}".format(month))
     cell_width = 4.5
@@ -116,20 +144,31 @@ def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
             if 'empty' in cell:
                 continue
             value = cell['value']
-            # dwg.textAt(value, 0.9, x+width*col_index, y+width*r_i, width, width)
             inset.textAt(value, 0.9, 0+width*col_index, 0+width*r_i, width, width)
 
     if upper_half:
-        dwg.composite(inset, x, y+k)
-    else:
+        inset.deformDown()
+        inset.rotate(-30)
         dwg.composite(inset, x, y)
+    else:
+        inset.rotate(-30)
+        dwg.composite(inset, x, y+k)
 
 def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     dwg.rectangle(xpos, ypos, xsize, ysize)
     l=xsize/math.sqrt(3)
-    k=xsize/3 
-    dwg.textAt(str(cal['year']), 2, xpos + xsize/2, ypos + 10, l, k/2)
-    dwg.textAt(cal['months'][month]['name'], 2, xpos + xsize/2, ypos + 30, l, k/2)
+    k=xsize/3
+
+    inset = ImageDraw(dwg.conf, l, k/2)
+    inset.textAt(str(cal['year']), 2, 0, 0, l, k/2)
+    inset.rotate(-30)
+    dwg.composite(inset, xpos + xsize/2, ypos + 10)
+
+    inset = ImageDraw(dwg.conf, l, k/2)
+    inset.textAt(cal['months'][month]['name'], 2, 0, 0, l, k/2)
+    inset.rotate(-30)
+    dwg.composite(inset, xpos + xsize/2, ypos + 30)
+
     x = xpos + xsize//2
     y = ypos + ysize//2
     drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, True)
