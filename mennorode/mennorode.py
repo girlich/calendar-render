@@ -63,7 +63,7 @@ class ImageDraw:
 
     def textAt(self, text=None, font_scale=1, top=0, left=0, width=None, height=None):
         inset = ImageDraw(self.conf, width, height)
-        inset.text(text, 1)
+        inset.text(text, font_scale)
         inset.rectangle(0,0,width,height)
         # inset.save("klein.pdf")
         self.image.composite(
@@ -96,16 +96,12 @@ def drawHalfMonth(month, cal, dwg, x, y, upper_half):
             continue
         if not upper_half and row_index >= 3:
             continue
-        width = 5
+        width = 4
         for col_index, cell in enumerate(row):
             if 'empty' in cell:
                 continue
             value = cell['value']
-            if 'justify' in cell and cell['justify'] == 'right':
-                justify=cell['justify']
-            else:
-                justify='left'
-            dwg.textAt(value, 1, x+5*col_index, y+5*row_index, 5, 5)
+            dwg.textAt(value, 1, x+width*col_index, y+width*row_index, width, width)
 
 def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     dwg.rectangle(xpos, ypos, xsize, ysize)
