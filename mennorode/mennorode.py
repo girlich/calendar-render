@@ -66,17 +66,19 @@ class ImageDraw:
         inset = ImageDraw(self.conf, width, height)
         inset.text(text, font_scale)
         inset.rectangle(0,0,width,height)
-        # inset.save("klein.pdf")
+        self.composite(inset, top, left)
+
+    def composite(self, inset, left, top):
         self.image.composite(
             image=inset.image,
-            left=round(top*self.scale),
-            top=round(left*self.scale)
+            left=round(left*self.scale),
+            top=round(top*self.scale)
         )
 
-    def rectangle(self, x, y, width, height):
+    def rectangle(self, x, y, width, height, stroke_color='black'):
         with Drawing() as draw:
             draw.fill_color=Color('transparent')
-            draw.stroke_color=Color('black')
+            draw.stroke_color=Color(stroke_color)
             draw.stroke_width=5
             draw.rectangle(
                 left=round(x*self.scale),
@@ -87,18 +89,26 @@ class ImageDraw:
             draw(self.image)
 
     def save(self, filename):
-        print(self.image.resolution)
+        # print(self.image.resolution)
         self.image.save(filename=filename)
 
-def drawHalfMonth(month, cal, dwg, x, y, upper_half):
+def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
     print("month={}".format(month))
+    cell_width = 4.5
+    l=xsize/math.sqrt(3)
+    k=xsize/3.0
+
+    inset = ImageDraw(dwg.conf, l, k)
+    # print("l={} k={}".format(l,k))
+    inset.rectangle(0,0,l,k,stroke_color='green')
+
     for row_index, row in enumerate(cal['months'][month]['cells']):
         if upper_half and row_index < 3:
             continue
         if not upper_half and row_index >= 3:
             continue
         if row_index < 3:
-            r_i = row_index + 3
+            r_i = row_index
         else:
             r_i = row_index - 3
         width = 4.5
@@ -106,7 +116,13 @@ def drawHalfMonth(month, cal, dwg, x, y, upper_half):
             if 'empty' in cell:
                 continue
             value = cell['value']
-            dwg.textAt(value, 0.9, x+width*col_index, y+width*r_i, width, width)
+            # dwg.textAt(value, 0.9, x+width*col_index, y+width*r_i, width, width)
+            inset.textAt(value, 0.9, 0+width*col_index, 0+width*r_i, width, width)
+
+    if upper_half:
+        dwg.composite(inset, x, y+k)
+    else:
+        dwg.composite(inset, x, y)
 
 def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     dwg.rectangle(xpos, ypos, xsize, ysize)
@@ -116,24 +132,17 @@ def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     dwg.textAt(cal['months'][month]['name'], 2, xpos + xsize/2, ypos + 30, l, k/2)
     x = xpos + xsize//2
     y = ypos + ysize//2
-    drawHalfMonth(month, cal, dwg, x, y, True)
-    drawHalfMonth(11-month, cal, dwg, x, y, False)
+    drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, True)
+    drawHalfMonth(11-month, cal, dwg, x, y, xsize, ysize, False)
 
 
 def generatePDF(cal):
     conf=Configuration()
-#    width = 210.0     # A4 width in mm
-#    height = 297.0    # A4 height in mm
-#    id = ImageDraw(conf, width, height)
-#    id.text('Hallo Huhu 1234567890', 1)
-#    id.rectangle(0,0,width,height)
-#    id.textAt(text='AAAAAAAAAAAA', font_scale=1, left=10, top=10, width=70, height=30)
-#    id.save('hallo.pdf')
 
     page_width=210.0    # A4 width in mm
     page_height=297.0   # A4 height in mm
 
-    width=60
+    width=60            # width of a single month
     height=width*math.sqrt(3)
     
     months = 12
@@ -159,7 +168,7 @@ def generatePDF(cal):
         drawMonth(month, cal, d[p], xoffset+i*width, yoffset+j*height, width, height)
     
     for page in range(pages):
-        d[p].save('page-{}.pdf'.format(page))
+        d[page].save('page-{}.pdf'.format(page))
 
 def main():
     parser = argparse.ArgumentParser()
