@@ -2,6 +2,7 @@
 
 import argparse
 import inspect
+import math
 import os
 import sys
 from wand.image import Image
@@ -96,17 +97,23 @@ def drawHalfMonth(month, cal, dwg, x, y, upper_half):
             continue
         if not upper_half and row_index >= 3:
             continue
-        width = 4
+        if row_index < 3:
+            r_i = row_index + 3
+        else:
+            r_i = row_index - 3
+        width = 4.5
         for col_index, cell in enumerate(row):
             if 'empty' in cell:
                 continue
             value = cell['value']
-            dwg.textAt(value, 1, x+width*col_index, y+width*row_index, width, width)
+            dwg.textAt(value, 0.9, x+width*col_index, y+width*r_i, width, width)
 
 def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     dwg.rectangle(xpos, ypos, xsize, ysize)
-    dwg.textAt(str(cal['year']), 2, xpos + xsize/2, ypos + 10, 30, 15)
-    dwg.textAt(cal['months'][month]['name'], 2, xpos + xsize/2, ypos + 30, 30, 15)
+    l=xsize/math.sqrt(3)
+    k=xsize/3 
+    dwg.textAt(str(cal['year']), 2, xpos + xsize/2, ypos + 10, l, k/2)
+    dwg.textAt(cal['months'][month]['name'], 2, xpos + xsize/2, ypos + 30, l, k/2)
     x = xpos + xsize//2
     y = ypos + ysize//2
     drawHalfMonth(month, cal, dwg, x, y, True)
@@ -122,8 +129,6 @@ def generatePDF(cal):
 #    id.rectangle(0,0,width,height)
 #    id.textAt(text='AAAAAAAAAAAA', font_scale=1, left=10, top=10, width=70, height=30)
 #    id.save('hallo.pdf')
-
-    import math
 
     page_width=210.0    # A4 width in mm
     page_height=297.0   # A4 height in mm
