@@ -27,7 +27,6 @@ class ImageDraw:
         self.width = width
         self.height = height
         self.scale = self.conf.dpi/25.4
-        print(self.scale)
         self.image = Image(
             width=round(self.width*self.scale),
             height=round(self.height*self.scale),
@@ -35,15 +34,12 @@ class ImageDraw:
             resolution=(self.conf.dpi, self.conf.dpi)
         )
         self.image.resolution=self.conf.dpi
-        print(self.conf.dpi)
-        print(self.image.resolution)
 
     def text(self, text, font_scale):
         with Drawing() as draw:
             # Set the font size, color, and shape
             # draw.font_size = 40
             draw.font_size = round(1.0 * self.conf.font_size * font_scale * self.conf.dpi/72.0)
-            print(round(1.0 * self.conf.font_size * font_scale * self.conf.dpi / 72.0))
             draw.text_color = self.conf.text_color
             draw.font = self.conf.font_path
 
@@ -55,8 +51,12 @@ class ImageDraw:
             y = round((self.image.height - text_height) / 2 + font_metrics.ascender)
             # print(y)
 
-            # Finally Draw the text
-            draw.text(x, y, text)
+            try:
+                # Finally Draw the text
+                draw.text(x, y, text)
+            except:
+                print("error printing text '{}' at ({},{})".format(text, x, y))
+                pass
 
             # Apply all drawing operations on the image
             draw(self.image)
@@ -65,7 +65,7 @@ class ImageDraw:
         inset = ImageDraw(self.conf, width, height)
         inset.text(text, 1)
         inset.rectangle(0,0,width,height)
-        inset.save("klein.pdf")
+        # inset.save("klein.pdf")
         self.image.composite(
             image=inset.image,
             left=round(top*self.scale),
@@ -89,118 +89,6 @@ class ImageDraw:
         print(self.image.resolution)
         self.image.save(filename=filename)
 
-def generatePDF(cal):
-    conf=Configuration(dpi=300)
-    width = 210.0
-    height = 297.0
-    id = ImageDraw(conf, width, height)
-    id.text('Hallo Huhu 1234567890', 1)
-    id.rectangle(0,0,width,height)
-    id.textAt(text='AAAAAAAAAAAA', font_scale=1, left=10, top=10, width=70, height=30)
-    id.save('hallo.pdf')
-    
-
-#def drawRectangle(dwg, x, y, width, height):
-#    dwg.append(
-#        dwg.Rectangle(x, y, width, height,
-#            stroke='black',
-#            stroke_width=0.5,
-#            fill='none'
-#        )
-#    )
-
-#def drawText(dwg, text, size, justify, x, y, width, height):
-#    drawRectangle(dwg, x, y, width, height)
-#    if justify=='left':
-#        text_anchor='start'
-#        xt=x
-#    elif justify=='right':
-#        text_anchor='end'
-#        xt=x+width
-#    else:
-#        text_anchor='middle'
-#        xt=x+width/2
-#    yt=y+height/2
-#    dwg.append(
-#        dwg.Text(text,
-#            stroke='black',
-#            fill='black',
-#            x=xt, y=yt,
-#            font_size=size,
-#            font_family='sans-serif',
-#            font_weight='lighter',
-#            dominant_baseline='middle',
-#            text_anchor=text_anchor,
-#        )
-#    )
-
-#def drawTextToImage(filename, text, width, height):
-#    print(text)
-#    from wand.image import Image
-#    from wand.color import Color
-#    from wand.font import Font
-#    from wand.drawing import Drawing
-#    font_size = 40
-#    text_color = 'black'
-#    font_path = '/usr/share/fonts/texlive-gnu-freefont/FreeSans.otf'
-#    with Image(width=width*20, height=height*20, background=Color('transparent')) as img:
-#        # Create a drawing context
-#        with Drawing() as draw:
-#            # Set the font size, color, and shape
-#            draw.font_size = font_size
-#            draw.text_color = Color(text_color)
-#            draw.font = font_path
-#
-#            # Calculate the position to center the text
-#            font_metrics = draw.get_font_metrics(img, text)
-#            x = round((img.width - font_metrics.text_width) / 2)
-#            text_height = font_metrics.ascender - font_metrics.descender
-#            # print(font_metrics.ascender, font_metrics.descender, text_height, img.height)
-#            y = round((img.height - text_height) / 2 + font_metrics.ascender)
-#            # print(y)
-##
-#            # Draw the text
-#            draw.text(x, y, text)
-#
-#            # Apply all drawing operations on the image
-#            draw(img)
-#
-#        img.save(filename=filename)
-#
-#def drawTextImage(dwg, text, size, justify, x, y, width, height):
-#    drawRectangle(dwg, x, y, width, height)
-#    if justify=='left':
-#        text_anchor='start'
-#        xt=x
-#    elif justify=='right':
-#        text_anchor='end'
-#        xt=x+width
-#    else:
-#        text_anchor='middle'
-#        xt=x+width/2
-#    yt=y+height/2
-#    
-#    dwg.append(
-#        dwg.Text(text,
-#            stroke='black',
-#            fill='black',
-#            x=xt, y=yt,
-#            font_size=size,
-#            font_family='sans-serif',
-#            font_weight='lighter',
-#            dominant_baseline='middle',
-#            text_anchor=text_anchor,
-#        )
-#    )
-#    filename='tmp.png'
-#    drawTextToImage(filename, text, width, height)
-#    dwg.append(
-#        dwg.Image(x, y, width, height, filename,
-#            embed=True
-#        )
-#    )
-
-
 def drawHalfMonth(month, cal, dwg, x, y, upper_half):
     print("month={}".format(month))
     for row_index, row in enumerate(cal['months'][month]['cells']):
@@ -217,24 +105,32 @@ def drawHalfMonth(month, cal, dwg, x, y, upper_half):
                 justify=cell['justify']
             else:
                 justify='left'
-            # drawText(dwg, value, '10px', justify, x+5*col_index, y+5*row_index, 5, 5)
-            drawTextImage(dwg, value, '10px', justify, x+5*col_index, y+5*row_index, 5, 5)
+            dwg.textAt(value, 1, x+5*col_index, y+5*row_index, 5, 5)
 
 def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
-#    drawRectangle(dwg, xpos, ypos, xsize, ysize)
-    drawText(dwg, cal['year'], '20px', 'left', xpos + xsize/2, ypos + 10, 30, 15)
-    drawText(dwg, cal['months'][month]['name'], '20px', 'left', xpos + xsize/2, ypos + 30, 30, 15)
+    dwg.rectangle(xpos, ypos, xsize, ysize)
+    dwg.textAt(str(cal['year']), 2, xpos + xsize/2, ypos + 10, 30, 15)
+    dwg.textAt(cal['months'][month]['name'], 2, xpos + xsize/2, ypos + 30, 30, 15)
     x = xpos + xsize//2
     y = ypos + ysize//2
     drawHalfMonth(month, cal, dwg, x, y, True)
     drawHalfMonth(11-month, cal, dwg, x, y, False)
 
 
-def generateSVG(cal):
+def generatePDF(cal):
+    conf=Configuration()
+#    width = 210.0     # A4 width in mm
+#    height = 297.0    # A4 height in mm
+#    id = ImageDraw(conf, width, height)
+#    id.text('Hallo Huhu 1234567890', 1)
+#    id.rectangle(0,0,width,height)
+#    id.textAt(text='AAAAAAAAAAAA', font_scale=1, left=10, top=10, width=70, height=30)
+#    id.save('hallo.pdf')
+
     import math
 
-    page_width=210
-    page_height=297
+    page_width=210.0    # A4 width in mm
+    page_height=297.0   # A4 height in mm
 
     width=60
     height=width*math.sqrt(3)
@@ -250,7 +146,7 @@ def generateSVG(cal):
 
     d=[]
     for page in range(pages):
-        d.append(draw.Drawing(page_width, page_height))
+        d.append(ImageDraw(conf, page_width, page_height))
 
     for month in range(months):
         p = month // months_per_page
@@ -262,8 +158,7 @@ def generateSVG(cal):
         drawMonth(month, cal, d[p], xoffset+i*width, yoffset+j*height, width, height)
     
     for page in range(pages):
-        with open('page-{}.svg'.format(page),'w') as writer:
-            writer.write(d[page].as_svg())
+        d[p].save('page-{}.pdf'.format(page))
 
 def main():
     parser = argparse.ArgumentParser()
