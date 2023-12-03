@@ -6,6 +6,7 @@ import inspect
 from itertools import chain
 import math
 import os
+import re
 import sys
 from wand.image import Image
 from wand.color import Color
@@ -64,11 +65,21 @@ class ImageDraw:
             # Apply all drawing operations on the image
             draw(self.image)
 
-    def textAt(self, text=None, font_scale=1, top=0, left=0, width=None, height=None):
-        inset = ImageDraw(self.conf, width, height)
-        inset.text(text, font_scale)
-        inset.rectangle(0,0,width,height)
-        self.composite(inset, top, left)
+    def textAt(self, text=None, font_scale=1, left=0, top=0, width=None, height=None):
+        match = re.fullmatch(r"^(\d+)(/)(\d+)$", text)
+        if match:
+            print("{} / {}".format(match.group(1), match.group(3)))
+            small_width=width*0.7
+            small_height=height*0.5
+            small_font=font_scale*0.8
+            self.textAt(text=match.group(1), font_scale=small_font, left=left, top=top, width=small_width, height=small_height)
+            self.textAt(text="-", font_scale=small_font, left=left+(width-small_width)/2, top=top+(height-small_height)/2, width=small_width, height=small_height)
+            self.textAt(text=match.group(3), font_scale=small_font, left=left+width-small_width, top=top+height-small_height, width=small_width, height=small_height)
+        else:
+            inset = ImageDraw(self.conf, width, height)
+            inset.text(text, font_scale)
+            inset.edge(stroke_color='red')
+            self.composite(inset, left, top)
 
     def composite(self, inset, left, top):
         self.image.composite(
@@ -90,46 +101,49 @@ class ImageDraw:
             )
             draw(self.image)
 
+    def edge(self, stroke_color='transparent'):
+        self.rectangle(0, 0, self.width, self.height, stroke_color=stroke_color)
+
     def save(self, filename):
         # print(self.image.resolution)
         self.image.save(filename=filename)
 
     def rotate(self, degrees=30):
         self.image.rotate(degrees)
+        self.edge(stroke_color='blue')
 
-    def deformDown(self):
-        print(self.image[0][0])
-        self.image[0][0]=Color('red')
-        for x in range(10):
-            for y in range(10):
-               self.image[y][x]=Color('red')
+    def deform(self, kind):
         self.image.background_color = Color('transparent')
         self.image.virtual_pixel = 'background'
-        Point = namedtuple('Point', ['x', 'y', 'i', 'j'])
         # print("im({},{})".format(self.image.width, self.image.height))
-        order = 1.5
-        alpha = Point(0, 0, 0, 0)
-        beta = Point(0, self.image.height, 0, self.image.height)
-        gamma = Point(self.image.width, self.image.height, self.image.width, self.image.height)
-        delta = Point(self.image.width, 0, self.image.width, self.image.height*1)
-        args = (
-            alpha.x, alpha.y, alpha.i, alpha.j,
-            beta.x, beta.y, beta.i, beta.j,
-            gamma.x, gamma.y, gamma.i, gamma.j,
-            delta.x, delta.y, delta.i, delta.j,
+        args={}
+        args['down'] = (
+            0, 0, 0, 0,
+            0, self.image.height, 0, self.image.height,
+            self.image.width, self.image.height, self.image.width, self.image.height,
+            self.image.width, 0, self.image.width, self.image.height*1
         )
-        self.image.distort('bilinear_forward', args)
+        args['up'] = (
+            0, 0, 0, 0,
+            0, self.image.height, 0, self.image.height,
+            self.image.width, self.image.height, self.image.width, 0,
+            self.image.width, 0, self.image.width, 0
+        )
+        self.image.distort('bilinear_forward', args[kind])
+        self.edge(stroke_color='yellow')
 
 def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
     print("month={}".format(month))
-    cell_width = 4.5
     l=xsize/math.sqrt(3)
     k=xsize/3.0
 
     inset = ImageDraw(dwg.conf, l, k)
     # print("l={} k={}".format(l,k))
-    inset.rectangle(0,0,l,k,stroke_color='green')
+    inset.edge(stroke_color='green')
+    # inset.rectangle(0,0,l,k,stroke_color='green')
 
+    cell_width = l * 0.8 / 7.0
+    cell_height = k / 3.0
     for row_index, row in enumerate(cal['months'][month]['cells']):
         if upper_half and row_index < 3:
             continue
@@ -139,18 +153,18 @@ def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
             r_i = row_index
         else:
             r_i = row_index - 3
-        width = 4.5
         for col_index, cell in enumerate(row):
             if 'empty' in cell:
                 continue
             value = cell['value']
-            inset.textAt(value, 0.9, 0+width*col_index, 0+width*r_i, width, width)
+            inset.textAt(text=value, font_scale=0.8, left=cell_width*col_index, top=cell_height*r_i, width=cell_width, height=cell_height)
 
     if upper_half:
-        inset.deformDown()
+        inset.deform("down")
         inset.rotate(-30)
         dwg.composite(inset, x, y)
     else:
+        inset.deform("up")
         inset.rotate(-30)
         dwg.composite(inset, x, y+k)
 
@@ -160,12 +174,12 @@ def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     k=xsize/3
 
     inset = ImageDraw(dwg.conf, l, k/2)
-    inset.textAt(str(cal['year']), 2, 0, 0, l, k/2)
+    inset.textAt(text=str(cal['year']), font_scale=2, left=0, top=0, width=l, height=k/2)
     inset.rotate(-30)
     dwg.composite(inset, xpos + xsize/2, ypos + 10)
 
     inset = ImageDraw(dwg.conf, l, k/2)
-    inset.textAt(cal['months'][month]['name'], 2, 0, 0, l, k/2)
+    inset.textAt(cal['months'][month]['name'], font_scale=2, left=0, top=0, width=l, height=k/2)
     inset.rotate(-30)
     dwg.composite(inset, xpos + xsize/2, ypos + 30)
 
