@@ -104,10 +104,6 @@ class ImageDraw:
     def edge(self, stroke_color='transparent'):
         self.rectangle(0, 0, self.width, self.height, stroke_color=stroke_color)
 
-    def save(self, filename):
-        # print(self.image.resolution)
-        self.image.save(filename=filename)
-
     def rotate(self, degrees=30):
         self.image.rotate(degrees)
         self.edge(stroke_color='blue')
@@ -180,7 +176,7 @@ def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
 
     inset = ImageDraw(dwg.conf, l, k/2)
     inset.textAt(cal['months'][month]['name'], font_scale=2, left=0, top=0, width=l, height=k/2)
-    inset.rotate(-30)
+    inset.rotate(30)
     dwg.composite(inset, xpos + xsize/2, ypos + 30)
 
     x = xpos + xsize//2
@@ -219,9 +215,11 @@ def generatePDF(cal):
         print("p={} m={} i={} j={} part={}".format(p, month, i, j, part))
 
         drawMonth(month, cal, d[p], xoffset+i*width, yoffset+j*height, width, height)
-    
-    for page in range(pages):
-        d[page].save('page-{}.pdf'.format(page))
+   
+    with Image() as sequence:
+        for page in range(pages):
+            sequence.sequence.append(d[page].image)
+        sequence.save(filename='mennorode-{}.pdf'.format(str(cal['year'])))
 
 def main():
     parser = argparse.ArgumentParser()
