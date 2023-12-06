@@ -170,13 +170,13 @@ def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     l=xsize / math.sqrt(3.0)
     k=xsize / 3.0
 
-    inset = ImageDraw(dwg.conf, l, k/2)
-    inset.textAt(text=str(cal['year']), font_scale=2, left=0, top=0, width=l, height=k/2)
+    inset = ImageDraw(dwg.conf, l, k)
+    inset.textAt(text=str(cal['year']), font_scale=2, left=0, top=k/2.0, width=l, height=k/2.0)
     inset.rotate(-30)
-    dwg.composite(inset, xpos + xsize/2, ypos + 10)
+    dwg.composite(inset, xpos + k, ypos - l / 2.0)
 
     inset = ImageDraw(dwg.conf, l, k)
-    inset.textAt(cal['months'][month]['name'], font_scale=2, left=0, top=0, width=l, height=k/2)
+    inset.textAt(cal['months'][month]['name'], font_scale=2, left=0, top=0, width=l, height=k/2.0)
     inset.rotate(30)
     dwg.composite(inset, xpos + k, ypos + l / 2.0)
 
