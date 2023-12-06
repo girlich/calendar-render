@@ -162,12 +162,12 @@ def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
     else:
         inset.deform("up")
         inset.rotate(-30)
-        dwg.composite(inset, x, y+k)
+        dwg.composite(inset, x, y)
 
 def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     dwg.rectangle(xpos, ypos, xsize, ysize)
-    l=xsize/math.sqrt(3)
-    k=xsize/3
+    l=xsize / math.sqrt(3.0)
+    k=xsize / 3.0
 
     inset = ImageDraw(dwg.conf, l, k/2)
     inset.textAt(text=str(cal['year']), font_scale=2, left=0, top=0, width=l, height=k/2)
@@ -179,11 +179,12 @@ def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     inset.rotate(30)
     dwg.composite(inset, xpos + xsize/2, ypos + 30)
 
-    x = xpos + xsize//2
-    y = ypos + ysize//2
+    x = xpos + k
+    y = ypos + ysize / 2.0
     drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, True)
+    x = xpos + xsize / 2.0
+    y = ypos + 2.0 * l
     drawHalfMonth(11-month, cal, dwg, x, y, xsize, ysize, False)
-
 
 def generatePDF(cal):
     conf=Configuration()
