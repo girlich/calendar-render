@@ -166,6 +166,7 @@ def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
 
 def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     dwg.rectangle(xpos, ypos, xsize, ysize)
+
     l=xsize / math.sqrt(3.0)
     k=xsize / 3.0
 
@@ -174,14 +175,15 @@ def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     inset.rotate(-30)
     dwg.composite(inset, xpos + xsize/2, ypos + 10)
 
-    inset = ImageDraw(dwg.conf, l, k/2)
+    inset = ImageDraw(dwg.conf, l, k)
     inset.textAt(cal['months'][month]['name'], font_scale=2, left=0, top=0, width=l, height=k/2)
     inset.rotate(30)
-    dwg.composite(inset, xpos + xsize/2, ypos + 30)
+    dwg.composite(inset, xpos + k, ypos + l / 2.0)
 
     x = xpos + k
     y = ypos + ysize / 2.0
     drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, True)
+
     x = xpos + xsize / 2.0
     y = ypos + 2.0 * l
     drawHalfMonth(11-month, cal, dwg, x, y, xsize, ysize, False)
@@ -220,7 +222,7 @@ def generatePDF(cal):
     with Image() as sequence:
         for page in range(pages):
             sequence.sequence.append(d[page].image)
-        sequence.save(filename='mennorode-{}.pdf'.format(str(cal['year'])))
+        sequence.save(filename='mennorode-{}-{}.pdf'.format(str(cal['year']), cal['locale']))
 
 def main():
     parser = argparse.ArgumentParser()

@@ -32,10 +32,11 @@ def collectMonth(year, month, first):
     return rows
 
 def collectYear(year, first, _locale):
-    locale.setlocale(locale.LC_ALL, _locale)
     cal={}
+    cal['locale'] = _locale
     cal['year'] = year
     cal['months'] = []
+    locale.setlocale(locale.LC_ALL, _locale)
     for month in range(1, 13):
         m = {}
         m['name'] = calendar.month_name[month]
