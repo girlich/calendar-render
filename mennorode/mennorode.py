@@ -25,19 +25,28 @@ class Configuration:
         self.text_color = text_color 
         self.font_path = font_path
 
+def newImage(width, height, background, resolution):
+    image = Image(
+        width=round(width),
+        height=round(height),
+        background=Color(background),
+        resolution=(resolution, resolution)
+    )
+    image.resolution = resolution
+    return image
+
 class ImageDraw:
     def __init__(self, conf, width, height):
         self.conf = conf
         self.width = width
         self.height = height
         self.scale = self.conf.dpi/25.4
-        self.image = Image(
+        self.image = newImage(
             width=round(self.width*self.scale),
             height=round(self.height*self.scale),
-            background=Color('transparent'),
-            resolution=(self.conf.dpi, self.conf.dpi)
+            background='transparent',
+            resolution=self.conf.dpi
         )
-        self.image.resolution=self.conf.dpi
 
     def text(self, text, font_scale):
         with Drawing() as draw:
@@ -78,7 +87,7 @@ class ImageDraw:
         else:
             inset = ImageDraw(self.conf, width, height)
             inset.text(text, font_scale)
-            inset.edge(stroke_color='red')
+            # inset.edge(stroke_color='red')
             self.composite(inset, left, top)
 
     def composite(self, inset, left, top):
@@ -106,27 +115,74 @@ class ImageDraw:
 
     def rotate(self, degrees=30):
         self.image.rotate(degrees)
-        self.edge(stroke_color='blue')
+        # self.edge(stroke_color='blue')
 
     def deform(self, kind):
         self.image.background_color = Color('transparent')
         self.image.virtual_pixel = 'background'
-        # print("im({},{})".format(self.image.width, self.image.height))
         args={}
-        args['down'] = (
+        args['rightdown'] = (
             0, 0, 0, 0,
             0, self.image.height, 0, self.image.height,
             self.image.width, self.image.height, self.image.width, self.image.height,
-            self.image.width, 0, self.image.width, self.image.height*1
+            self.image.width, 0, self.image.width, self.image.height
         )
-        args['up'] = (
+        args['rightup'] = (
             0, 0, 0, 0,
             0, self.image.height, 0, self.image.height,
             self.image.width, self.image.height, self.image.width, 0,
             self.image.width, 0, self.image.width, 0
         )
+        args['leftdown'] = (
+            0, 0, 0, self.image.height,
+            0, self.image.height, 0, self.image.height,
+            self.image.width, self.image.height, self.image.width, self.image.height,
+            self.image.width, 0, self.image.width, 0
+        )
+        args['leftup'] = (
+            0, 0, 0, 0,
+            0, self.image.height, 0, 0,
+            self.image.width, self.image.height, self.image.width, self.image.height,
+            self.image.width, 0, self.image.width, 0
+        )
         self.image.distort('bilinear_forward', args[kind])
-        self.edge(stroke_color='yellow')
+        # self.edge(stroke_color='yellow')
+
+    def deformPartYear(self):
+        imageEmpty = ImageDraw(self.conf, self.width, self.height)
+        imageEmpty.image = newImage(width=self.image.width, height=self.image.height, background='transparent', resolution=self.conf.dpi)
+
+        imageLeft = ImageDraw(self.conf, self.width, self.height)
+        imageLeft.image = self.image.clone()
+        imageLeft.image.crop(0, round(imageLeft.image.height/2), width=round(imageLeft.image.width/2), height=round(imageLeft.image.height/2))
+        imageLeft.deform('leftdown')
+        imageEmpty.composite(imageLeft, 0, imageEmpty.height/2)
+
+        imageRight = ImageDraw(self.conf, self.width, self.height)
+        imageRight.image = self.image.clone()
+        imageRight.image.crop(round(imageRight.image.width/2), round(imageRight.image.height/2), width=round(imageRight.image.width/2), height=round(imageRight.image.height/2))
+        imageRight.deform('rightdown')
+        imageEmpty.composite(imageRight, imageEmpty.width/2, imageEmpty.height/2)
+
+        return imageEmpty
+
+    def deformPartMonth(self):
+        imageEmpty = ImageDraw(self.conf, self.width, self.height)
+        imageEmpty.image = newImage(width=self.image.width, height=self.image.height, background='transparent', resolution=self.conf.dpi)
+
+        imageLeft = ImageDraw(self.conf, self.width, self.height)
+        imageLeft.image = self.image.clone()
+        imageLeft.image.crop(0, 0, width=round(imageLeft.image.width/2), height=round(imageLeft.image.height/2))
+        imageLeft.deform('leftup')
+        imageEmpty.composite(imageLeft, 0, 0)
+
+        imageRight = ImageDraw(self.conf, self.width, self.height)
+        imageRight.image = self.image.clone()
+        imageRight.image.crop(round(imageRight.image.width/2), 0, width=round(imageRight.image.width/2), height=round(imageRight.image.height/2))
+        imageRight.deform('rightup')
+        imageEmpty.composite(imageRight, imageEmpty.width/2, 0)
+
+        return imageEmpty
 
 def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
     print("month={}".format(month))
@@ -134,9 +190,7 @@ def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
     k=xsize/3.0
 
     inset = ImageDraw(dwg.conf, l, k)
-    # print("l={} k={}".format(l,k))
-    inset.edge(stroke_color='green')
-    # inset.rectangle(0,0,l,k,stroke_color='green')
+    # inset.edge(stroke_color='green')
 
     cell_width = l * 0.8 / 7.0
     cell_height = k / 3.0
@@ -154,13 +208,12 @@ def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
                 continue
             value = cell['value']
             inset.textAt(text=value, font_scale=0.8, left=cell_width*col_index, top=cell_height*r_i, width=cell_width, height=cell_height)
-
     if upper_half:
-        inset.deform("down")
+        inset.deform("rightdown")
         inset.rotate(-30)
         dwg.composite(inset, x, y)
     else:
-        inset.deform("up")
+        inset.deform("rightup")
         inset.rotate(-30)
         dwg.composite(inset, x, y)
 
@@ -172,13 +225,15 @@ def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
 
     inset = ImageDraw(dwg.conf, l, k)
     inset.textAt(text=str(cal['year']), font_scale=2, left=0, top=k/2.0, width=l, height=k/2.0)
-    inset.rotate(-30)
-    dwg.composite(inset, xpos + k, ypos - l / 2.0)
+    inset2 = inset.deformPartYear()
+    inset2.rotate(-30)
+    dwg.composite(inset2, xpos + k, ypos - l / 2.0)
 
     inset = ImageDraw(dwg.conf, l, k)
     inset.textAt(cal['months'][month]['name'], font_scale=2, left=0, top=0, width=l, height=k/2.0)
-    inset.rotate(30)
-    dwg.composite(inset, xpos + k, ypos + l / 2.0)
+    inset2 = inset.deformPartMonth()
+    inset2.rotate(30)
+    dwg.composite(inset2, xpos + k, ypos + l / 2.0)
 
     x = xpos + k
     y = ypos + ysize / 2.0
