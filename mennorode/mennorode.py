@@ -26,6 +26,7 @@ class Configuration:
         self.text_color = text_color 
         self.font_path = font_path
         self._year_font_scale = None
+        self._month_font_scale = None
 
     @property
     def year_font_scale(self):
@@ -42,6 +43,22 @@ class Configuration:
     def year_font_scale(self):
         print("deleter of year_font_scale called")
         del self._year_font_scale
+
+    @property
+    def month_font_scale(self):
+        """I'm the 'month_font_scale' property."""
+        print("getter of month_font_scale called. Value={}".format(self._month_font_scale))
+        return self._month_font_scale
+
+    @month_font_scale.setter
+    def month_font_scale(self, value):
+        print("setter of month_font_scale called. Value={}".format(value))
+        self._month_font_scale = value
+
+    @month_font_scale.deleter
+    def month_font_scale(self):
+        print("deleter of month_font_scale called")
+        del self._month_font_scale
 
 def newImage(width, height, background, resolution):
     image = Image(
@@ -267,7 +284,7 @@ def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     dwg.composite(inset2, xpos + k, ypos - l / 2.0)
 
     inset = ImageDraw(dwg.conf, l, k)
-    inset.textAt(cal['months'][month]['name'], font_scale=2.0, left=0, top=0, width=l, height=k/2.0)
+    inset.textAt(cal['months'][month]['name'], font_scale=dwg.conf.month_font_scale, left=0, top=0, width=l, height=k/2.0)
     inset2 = inset.deformPartMonth()
     inset2.rotate(30)
     dwg.composite(inset2, xpos + k, ypos + l / 2.0)
@@ -304,9 +321,16 @@ def generatePDF(cal):
 
     l = width / math.sqrt(3.0)
     k = width / 3.0
+
     year_font_scale=d[0].tryText(text=str(cal['year']), font_scale_min=2, font_scale_max=4, width=l, height=k/2.0)
     print("Year font scale={}".format(year_font_scale))
     conf.year_font_scale=year_font_scale
+
+    month_font_scale = 4.0
+    for  month in range(months):
+        month_font_scale = min(month_font_scale, d[0].tryText(text=cal['months'][month]['name'], font_scale_min=1.8, font_scale_max=4, width=l*0.8, height=k/2.0))
+    print("Month font scale={}".format(month_font_scale))
+    conf.month_font_scale=month_font_scale
 
     for month in range(months):
         p = month // months_per_page
