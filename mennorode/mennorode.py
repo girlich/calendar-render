@@ -19,11 +19,29 @@ sys.path.insert(0, parentdir)
 from shared import m
 
 class Configuration:
-    def __init__(self, dpi=600, font_size=10, text_color='black', font_path='/usr/share/fonts/texlive-gnu-freefont/FreeSans.otf'):
+    #def __init__(self, dpi=600, font_size=10, text_color='black', font_path='/usr/share/fonts/texlive-gnu-freefont/FreeSans.otf'):
+    def __init__(self, dpi=600, font_size=10, text_color='black', font_path='/usr/share/fonts/truetype/LiberationSansNarrow-Regular.ttf'):
         self.dpi = dpi
         self.font_size = font_size         # in points (72th of an inch)
         self.text_color = text_color 
         self.font_path = font_path
+        self._year_font_scale = None
+
+    @property
+    def year_font_scale(self):
+        """I'm the 'year_font_scale' property."""
+        print("getter of year_font_scale called. Value={}".format(self._year_font_scale))
+        return self._year_font_scale
+
+    @year_font_scale.setter
+    def year_font_scale(self, value):
+        print("setter of year_font_scale called. Value={}".format(value))
+        self._year_font_scale = value
+
+    @year_font_scale.deleter
+    def year_font_scale(self):
+        print("deleter of year_font_scale called")
+        del self._year_font_scale
 
 def newImage(width, height, background, resolution):
     image = Image(
@@ -47,6 +65,13 @@ class ImageDraw:
             background='transparent',
             resolution=self.conf.dpi
         )
+
+    def textMetrics(self, text, font_scale):
+        with Drawing() as draw:
+            draw.font_size = round(1.0 * self.conf.font_size * font_scale * self.conf.dpi/72.0)
+            draw.font = self.conf.font_path
+            font_metrics = draw.get_font_metrics(self.image, text)
+            return (font_metrics.text_width/self.scale, font_metrics.text_height/self.scale)
 
     def text(self, text, font_scale):
         with Drawing() as draw:
@@ -184,6 +209,18 @@ class ImageDraw:
 
         return imageEmpty
 
+    def tryText(self, text, font_scale_min, font_scale_max, width=None, height=None):
+        steps = 10
+        print("try_text: scale={}..{}, size={}x{}".format(font_scale_min, font_scale_max, width, height))
+        for i in range(steps):
+            font_scale = font_scale_min + (font_scale_max - font_scale_min) * (steps-1-i)/(steps-1)
+            (tw, th) = self.textMetrics(text, font_scale)
+            print("scale={} {}x{}".format(font_scale, tw, th))
+             
+            # The biggest fitting font_scale wins.
+            if tw<=width and th<=height:
+                 return font_scale
+
 def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
     print("month={}".format(month))
     l=xsize/math.sqrt(3)
@@ -224,13 +261,13 @@ def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     k=xsize / 3.0
 
     inset = ImageDraw(dwg.conf, l, k)
-    inset.textAt(text=str(cal['year']), font_scale=2, left=0, top=k/2.0, width=l, height=k/2.0)
+    inset.textAt(text=str(cal['year']), font_scale=dwg.conf.year_font_scale, left=0, top=k/2.0, width=l, height=k/2.0)
     inset2 = inset.deformPartYear()
     inset2.rotate(-30)
     dwg.composite(inset2, xpos + k, ypos - l / 2.0)
 
     inset = ImageDraw(dwg.conf, l, k)
-    inset.textAt(cal['months'][month]['name'], font_scale=2, left=0, top=0, width=l, height=k/2.0)
+    inset.textAt(cal['months'][month]['name'], font_scale=2.0, left=0, top=0, width=l, height=k/2.0)
     inset2 = inset.deformPartMonth()
     inset2.rotate(30)
     dwg.composite(inset2, xpos + k, ypos + l / 2.0)
@@ -265,6 +302,12 @@ def generatePDF(cal):
     for page in range(pages):
         d.append(ImageDraw(conf, page_width, page_height))
 
+    l = width / math.sqrt(3.0)
+    k = width / 3.0
+    year_font_scale=d[0].tryText(text=str(cal['year']), font_scale_min=2, font_scale_max=4, width=l, height=k/2.0)
+    print("Year font scale={}".format(year_font_scale))
+    conf.year_font_scale=year_font_scale
+
     for month in range(months):
         p = month // months_per_page
         i = month%cols
@@ -272,7 +315,7 @@ def generatePDF(cal):
         part = (month%months_per_page)
         print("p={} m={} i={} j={} part={}".format(p, month, i, j, part))
 
-        drawMonth(month, cal, d[p], xoffset+i*width, yoffset+j*height, width, height)
+        drawMonth(month=month, cal=cal, dwg=d[p], xpos=xoffset+i*width, ypos=yoffset+j*height, xsize=width, ysize=height)
    
     with Image() as sequence:
         for page in range(pages):
