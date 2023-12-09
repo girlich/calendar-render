@@ -33,49 +33,49 @@ class Configuration:
     @property
     def year_font_scale(self):
         """I'm the 'year_font_scale' property."""
-        print("getter of year_font_scale called. Value={}".format(self._year_font_scale))
+        # print("getter of year_font_scale called. Value={}".format(self._year_font_scale))
         return self._year_font_scale
 
     @year_font_scale.setter
     def year_font_scale(self, value):
-        print("setter of year_font_scale called. Value={}".format(value))
+        # print("setter of year_font_scale called. Value={}".format(value))
         self._year_font_scale = value
 
     @year_font_scale.deleter
     def year_font_scale(self):
-        print("deleter of year_font_scale called")
+        # print("deleter of year_font_scale called")
         del self._year_font_scale
 
     @property
     def month_font_scale(self):
         """I'm the 'month_font_scale' property."""
-        print("getter of month_font_scale called. Value={}".format(self._month_font_scale))
+        # print("getter of month_font_scale called. Value={}".format(self._month_font_scale))
         return self._month_font_scale
 
     @month_font_scale.setter
     def month_font_scale(self, value):
-        print("setter of month_font_scale called. Value={}".format(value))
+        # print("setter of month_font_scale called. Value={}".format(value))
         self._month_font_scale = value
 
     @month_font_scale.deleter
     def month_font_scale(self):
-        print("deleter of month_font_scale called")
+        # print("deleter of month_font_scale called")
         del self._month_font_scale
 
     @property
     def day_font_scale(self):
         """I'm the 'day_font_scale' property."""
-        print("getter of day_font_scale called. Value={}".format(self._day_font_scale))
+        # print("getter of day_font_scale called. Value={}".format(self._day_font_scale))
         return self._day_font_scale
 
     @day_font_scale.setter
     def day_font_scale(self, value):
-        print("setter of day_font_scale called. Value={}".format(value))
+        # print("setter of day_font_scale called. Value={}".format(value))
         self._day_font_scale = value
 
     @day_font_scale.deleter
     def day_font_scale(self):
-        print("deleter of day_font_scale called")
+        # print("deleter of day_font_scale called")
         del self._day_font_scale
 
 def newImage(width, height, background, resolution):
