@@ -25,6 +25,9 @@ de_DE:
 en_US:
 	. $(V)/bin/activate ; python ./mennorode.py --first=6 --locale=$@ $(YEAR)
 
+it_IT:
+	. $(V)/bin/activate ; python ./mennorode.py --first=0 --locale=$@ $(YEAR)
+
 ta:
 	. $(V)/bin/activate ; python ./a.py
 

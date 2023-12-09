@@ -25,9 +25,80 @@ class Configuration:
         self.font_size = font_size         # in points (72th of an inch)
         self.text_color = text_color 
         self.font_path = font_path
+        self._month_width = None
+        self._month_height = None
+        self._l = None
+        self._k = None
         self._year_font_scale = None
         self._month_font_scale = None
         self._day_font_scale = None
+
+    @property
+    def month_width(self):
+        """I'm the 'month_width' property."""
+        # print("getter of month_width called. Value={}".format(self._month_width))
+        return self._month_width
+
+    @month_width.setter
+    def month_width(self, value):
+        # print("setter of month_width called. Value={}".format(value))
+        self._month_width = value
+        self.month_height = math.sqrt(3) * self._month_width
+        self.l = self.month_height / 3
+        self.k = self.month_width / 3
+
+    @month_width.deleter
+    def month_width(self):
+        # print("deleter of month_width called")
+        del self._month_width
+
+    @property
+    def month_height(self):
+        """I'm the 'month_height' property."""
+        # print("getter of month_height called. Value={}".format(self._month_height))
+        return self._month_height
+
+    @month_height.setter
+    def month_height(self, value):
+        # print("setter of month_height called. Value={}".format(value))
+        self._month_height = value
+
+    @month_height.deleter
+    def month_height(self):
+        # print("deleter of month_height called")
+        del self._month_height
+
+    @property
+    def l(self):
+        """I'm the 'l' property."""
+        # print("getter of l called. Value={}".format(self._l))
+        return self._l
+
+    @l.setter
+    def l(self, value):
+        # print("setter of l called. Value={}".format(value))
+        self._l = value
+
+    @l.deleter
+    def l(self):
+        # print("deleter of l called")
+        del self._l
+
+    @property
+    def k(self):
+        """I'm the 'k' property."""
+        # print("getter of k called. Value={}".format(self._k))
+        return self._k
+
+    @k.setter
+    def k(self, value):
+        # print("setter of k called. Value={}".format(value))
+        self._k = value
+
+    @k.deleter
+    def k(self):
+        # print("deleter of k called")
+        del self._k
 
     @property
     def year_font_scale(self):
@@ -264,14 +335,12 @@ class ImageDraw:
 
 def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
     print("month={}".format(month))
-    l=xsize/math.sqrt(3)
-    k=xsize/3.0
 
-    inset = ImageDraw(dwg.conf, l, k)
+    inset = ImageDraw(dwg.conf, dwg.conf.l, dwg.conf.k)
     # inset.edge(stroke_color='green')
 
-    cell_width = l * 0.8 / 7.0
-    cell_height = k / 3.0
+    cell_width = dwg.conf.l * 0.8 / 7.0
+    cell_height = dwg.conf.k / 3.0
     for row_index, row in enumerate(cal['months'][month]['cells']):
         if upper_half and row_index < 3:
             continue
@@ -298,27 +367,24 @@ def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
 def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     dwg.rectangle(xpos, ypos, xsize, ysize)
 
-    l=xsize / math.sqrt(3.0)
-    k=xsize / 3.0
-
-    inset = ImageDraw(dwg.conf, l, k)
-    inset.textAt(text=str(cal['year']), font_scale=dwg.conf.year_font_scale, left=0, top=k/2.0, width=l, height=k/2.0)
+    inset = ImageDraw(dwg.conf, dwg.conf.l, dwg.conf.k)
+    inset.textAt(text=str(cal['year']), font_scale=dwg.conf.year_font_scale, left=0, top=dwg.conf.k/2.0, width=dwg.conf.l, height=dwg.conf.k/2.0)
     inset2 = inset.deformPartYear()
     inset2.rotate(-30)
-    dwg.composite(inset2, xpos + k, ypos - l / 2.0)
+    dwg.composite(inset2, xpos + dwg.conf.k, ypos - dwg.conf.l / 2.0)
 
-    inset = ImageDraw(dwg.conf, l, k)
-    inset.textAt(cal['months'][month]['name'], font_scale=dwg.conf.month_font_scale, left=0, top=0, width=l, height=k/2.0)
+    inset = ImageDraw(dwg.conf, dwg.conf.l, dwg.conf.k)
+    inset.textAt(cal['months'][month]['name'], font_scale=dwg.conf.month_font_scale, left=0, top=0, width=dwg.conf.l, height=dwg.conf.k/2.0)
     inset2 = inset.deformPartMonth()
     inset2.rotate(30)
-    dwg.composite(inset2, xpos + k, ypos + l / 2.0)
+    dwg.composite(inset2, xpos + dwg.conf.k, ypos + dwg.conf.l / 2.0)
 
-    x = xpos + k
+    x = xpos + dwg.conf.k
     y = ypos + ysize / 2.0
     drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, True)
 
     x = xpos + xsize / 2.0
-    y = ypos + 2.0 * l
+    y = ypos + 2.0 * dwg.conf.l
     drawHalfMonth(11-month, cal, dwg, x, y, xsize, ysize, False)
 
 def generatePDF(cal):
@@ -327,8 +393,7 @@ def generatePDF(cal):
     page_width=210.0    # A4 width in mm
     page_height=297.0   # A4 height in mm
 
-    width=63            # width of a single month
-    height=width*math.sqrt(3)
+    conf.month_width=63 # width of a single month
     
     months = 12
     rows = 2
@@ -336,33 +401,30 @@ def generatePDF(cal):
     months_per_page = rows * cols
     pages = months // months_per_page
 
-    xoffset = ( page_width - cols*width ) / 2
-    yoffset = ( page_height - rows*height) / 2
-
     d=[]
     for page in range(pages):
         d.append(ImageDraw(conf, page_width, page_height))
 
-    l = width / math.sqrt(3.0)
-    k = width / 3.0
-
-    year_font_scale=d[0].tryText(text=str(cal['year']), font_scale_min=2, font_scale_max=4, width=l, height=k/2.0)
+    year_font_scale=d[0].tryText(text=str(cal['year']), font_scale_min=2, font_scale_max=4, width=conf.l, height=conf.k/2.0)
     print("Year font scale={}".format(year_font_scale))
     conf.year_font_scale=year_font_scale
 
     month_font_scale = 4.0
     for  month in range(months):
-        month_font_scale = min(month_font_scale, d[0].tryText(text=cal['months'][month]['name'], font_scale_min=1.8, font_scale_max=4, width=l*0.8, height=k/2.0))
+        month_font_scale = min(month_font_scale, d[0].tryText(text=cal['months'][month]['name'], font_scale_min=1.8, font_scale_max=4, width=conf.l*0.8, height=conf.k/2.0))
     print("Month font scale={}".format(month_font_scale))
     conf.month_font_scale=month_font_scale
 
     day_font_scale = 3
     for day in range(1,32):
-        day_font_scale = min(day_font_scale, d[0].tryText(text=str(day), font_scale_min=0.7, font_scale_max=3, width=l * 0.8 / 7.0, height=k / 3.0))
+        day_font_scale = min(day_font_scale, d[0].tryText(text=str(day), font_scale_min=0.7, font_scale_max=3, width=conf.l * 0.8 / 7.0, height=conf.k / 3.0))
     for day in list(calendar.day_name):
-        day_font_scale = min(day_font_scale, d[0].tryText(text=day[:2], font_scale_min=0.7, font_scale_max=3, width=l * 0.8 / 7.0, height=k / 3.0))
+        day_font_scale = min(day_font_scale, d[0].tryText(text=day[:2], font_scale_min=0.7, font_scale_max=3, width=conf.l * 0.8 / 7.0, height=conf.k / 3.0))
     print("Day font scale={}".format(day_font_scale))
     conf.day_font_scale=day_font_scale
+
+    xoffset = ( page_width - cols*conf.month_width ) / 2
+    yoffset = ( page_height - rows*conf.month_height) / 2
 
     for month in range(months):
         p = month // months_per_page
@@ -371,7 +433,7 @@ def generatePDF(cal):
         part = (month%months_per_page)
         print("p={} m={} i={} j={} part={}".format(p, month, i, j, part))
 
-        drawMonth(month=month, cal=cal, dwg=d[p], xpos=xoffset+i*width, ypos=yoffset+j*height, xsize=width, ysize=height)
+        drawMonth(month=month, cal=cal, dwg=d[p], xpos=xoffset+i*conf.month_width, ypos=yoffset+j*conf.month_height, xsize=conf.month_width, ysize=conf.month_height)
    
     with Image() as sequence:
         for page in range(pages):
