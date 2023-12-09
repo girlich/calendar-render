@@ -333,7 +333,7 @@ class ImageDraw:
                 font_scale_max = font_scale
         return font_scale_min
 
-def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
+def drawHalfMonth(month, cal, dwg, x, y, upper_half):
     print("month={}".format(month))
 
     inset = ImageDraw(dwg.conf, dwg.conf.l, dwg.conf.k)
@@ -364,8 +364,8 @@ def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
         inset.rotate(-30)
         dwg.composite(inset, x, y)
 
-def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
-    dwg.rectangle(xpos, ypos, xsize, ysize)
+def drawMonth(month, cal, dwg, xpos, ypos):
+    dwg.rectangle(xpos, ypos, dwg.conf.month_width, dwg.conf.month_height)
 
     inset = ImageDraw(dwg.conf, dwg.conf.l, dwg.conf.k)
     inset.textAt(text=str(cal['year']), font_scale=dwg.conf.year_font_scale, left=0, top=dwg.conf.k/2.0, width=dwg.conf.l, height=dwg.conf.k/2.0)
@@ -380,12 +380,12 @@ def drawMonth(month, cal, dwg, xpos, ypos, xsize, ysize):
     dwg.composite(inset2, xpos + dwg.conf.k, ypos + dwg.conf.l / 2.0)
 
     x = xpos + dwg.conf.k
-    y = ypos + ysize / 2.0
-    drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, True)
+    y = ypos + dwg.conf.month_height / 2.0
+    drawHalfMonth(month, cal, dwg, x, y, True)
 
-    x = xpos + xsize / 2.0
+    x = xpos + dwg.conf.month_width / 2.0
     y = ypos + 2.0 * dwg.conf.l
-    drawHalfMonth(11-month, cal, dwg, x, y, xsize, ysize, False)
+    drawHalfMonth(11-month, cal, dwg, x, y, False)
 
 def generatePDF(cal):
     conf=Configuration()
@@ -433,7 +433,7 @@ def generatePDF(cal):
         part = (month%months_per_page)
         print("p={} m={} i={} j={} part={}".format(p, month, i, j, part))
 
-        drawMonth(month=month, cal=cal, dwg=d[p], xpos=xoffset+i*conf.month_width, ypos=yoffset+j*conf.month_height, xsize=conf.month_width, ysize=conf.month_height)
+        drawMonth(month=month, cal=cal, dwg=d[p], xpos=xoffset+i*conf.month_width, ypos=yoffset+j*conf.month_height)
    
     with Image() as sequence:
         for page in range(pages):
