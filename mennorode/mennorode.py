@@ -245,16 +245,23 @@ class ImageDraw:
         return imageEmpty
 
     def tryText(self, text, font_scale_min, font_scale_max, width=None, height=None):
-        steps = 10
         print("try_text: scale={}..{}, size={}x{}".format(font_scale_min, font_scale_max, width, height))
+        (tw, th) = self.textMetrics(text, font_scale_min)
+        if tw>width or th>height:
+            raise ValueError("scale={}, min text already too large".format(font_scale_min))
+        (tw, th) = self.textMetrics(text, font_scale_max)
+        if tw<=width and th<=height:
+            raise ValueError("scale={}, max text already too small".format(font_scale_max))
+        steps = 10
         for i in range(steps):
-            font_scale = font_scale_min + (font_scale_max - font_scale_min) * (steps-1-i)/(steps-1)
+            font_scale = (font_scale_min + font_scale_max) / 2.0
             (tw, th) = self.textMetrics(text, font_scale)
             print("scale={} {}x{}".format(font_scale, tw, th))
-             
-            # The biggest fitting font_scale wins.
             if tw<=width and th<=height:
-                 return font_scale
+                font_scale_min = font_scale
+            else:
+                font_scale_max = font_scale
+        return font_scale_min
 
 def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
     print("month={}".format(month))
@@ -350,11 +357,11 @@ def generatePDF(cal):
     print("Month font scale={}".format(month_font_scale))
     conf.month_font_scale=month_font_scale
 
-    day_font_scale = 1.5
+    day_font_scale = 3
     for day in range(1,32):
-        day_font_scale = min(day_font_scale, d[0].tryText(text=str(day), font_scale_min=0.7, font_scale_max=1.5, width=l * 0.8 / 7.0, height=k / 3.0))
+        day_font_scale = min(day_font_scale, d[0].tryText(text=str(day), font_scale_min=0.7, font_scale_max=3, width=l * 0.8 / 7.0, height=k / 3.0))
     for day in list(calendar.day_name):
-        day_font_scale = min(day_font_scale, d[0].tryText(text=day[:2], font_scale_min=0.7, font_scale_max=1.5, width=l * 0.8 / 7.0, height=k / 3.0))
+        day_font_scale = min(day_font_scale, d[0].tryText(text=day[:2], font_scale_min=0.7, font_scale_max=3, width=l * 0.8 / 7.0, height=k / 3.0))
     print("Day font scale={}".format(day_font_scale))
     conf.day_font_scale=day_font_scale
 
