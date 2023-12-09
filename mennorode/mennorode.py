@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import calendar
 from collections import namedtuple
 import inspect
 from itertools import chain
@@ -27,6 +28,7 @@ class Configuration:
         self.font_path = font_path
         self._year_font_scale = None
         self._month_font_scale = None
+        self._day_font_scale = None
 
     @property
     def year_font_scale(self):
@@ -59,6 +61,22 @@ class Configuration:
     def month_font_scale(self):
         print("deleter of month_font_scale called")
         del self._month_font_scale
+
+    @property
+    def day_font_scale(self):
+        """I'm the 'day_font_scale' property."""
+        print("getter of day_font_scale called. Value={}".format(self._day_font_scale))
+        return self._day_font_scale
+
+    @day_font_scale.setter
+    def day_font_scale(self, value):
+        print("setter of day_font_scale called. Value={}".format(value))
+        self._day_font_scale = value
+
+    @day_font_scale.deleter
+    def day_font_scale(self):
+        print("deleter of day_font_scale called")
+        del self._day_font_scale
 
 def newImage(width, height, background, resolution):
     image = Image(
@@ -261,7 +279,7 @@ def drawHalfMonth(month, cal, dwg, x, y, xsize, ysize, upper_half):
             if 'empty' in cell:
                 continue
             value = cell['value']
-            inset.textAt(text=value, font_scale=0.8, left=cell_width*col_index, top=cell_height*r_i, width=cell_width, height=cell_height)
+            inset.textAt(text=value, font_scale=dwg.conf.day_font_scale, left=cell_width*col_index, top=cell_height*r_i, width=cell_width, height=cell_height)
     if upper_half:
         inset.deform("rightdown")
         inset.rotate(-30)
@@ -331,6 +349,14 @@ def generatePDF(cal):
         month_font_scale = min(month_font_scale, d[0].tryText(text=cal['months'][month]['name'], font_scale_min=1.8, font_scale_max=4, width=l*0.8, height=k/2.0))
     print("Month font scale={}".format(month_font_scale))
     conf.month_font_scale=month_font_scale
+
+    day_font_scale = 1.5
+    for day in range(1,32):
+        day_font_scale = min(day_font_scale, d[0].tryText(text=str(day), font_scale_min=0.7, font_scale_max=1.5, width=l * 0.8 / 7.0, height=k / 3.0))
+    for day in list(calendar.day_name):
+        day_font_scale = min(day_font_scale, d[0].tryText(text=day[:2], font_scale_min=0.7, font_scale_max=1.5, width=l * 0.8 / 7.0, height=k / 3.0))
+    print("Day font scale={}".format(day_font_scale))
+    conf.day_font_scale=day_font_scale
 
     for month in range(months):
         p = month // months_per_page
