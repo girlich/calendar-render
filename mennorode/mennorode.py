@@ -20,7 +20,6 @@ sys.path.insert(0, parentdir)
 from shared import m
 
 class Configuration:
-    #def __init__(self, dpi=600, font_size=10, text_color='black', font_path='/usr/share/fonts/texlive-gnu-freefont/FreeSans.otf'):
     def __init__(self, dpi=600, font_size=10, text_color='black', font_path='/usr/share/fonts/truetype/LiberationSansNarrow-Regular.ttf'):
         self.dpi = dpi
         self.font_size = font_size         # in points (72th of an inch)
@@ -328,7 +327,7 @@ def generatePDF(cal):
     page_width=210.0    # A4 width in mm
     page_height=297.0   # A4 height in mm
 
-    width=60            # width of a single month
+    width=63            # width of a single month
     height=width*math.sqrt(3)
     
     months = 12
