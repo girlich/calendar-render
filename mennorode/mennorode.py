@@ -318,11 +318,11 @@ class ImageDraw:
         print("try_text: scale={}..{}, size={}x{}".format(font_scale_min, font_scale_max, width, height))
         (tw, th) = self.textMetrics(text, font_scale_min)
         if tw>width or th>height:
-            raise ValueError("scale={}, min text already too large".format(font_scale_min))
+            raise ValueError("scale={}, min text '{}' already too large".format(font_scale_min, text))
         (tw, th) = self.textMetrics(text, font_scale_max)
         if tw<=width and th<=height:
-            raise ValueError("scale={}, max text already too small".format(font_scale_max))
-        steps = 10
+            raise ValueError("scale={}, max text '{}' already too small".format(font_scale_max, text))
+        steps = 15
         for i in range(steps):
             font_scale = (font_scale_min + font_scale_max) / 2.0
             (tw, th) = self.textMetrics(text, font_scale)
@@ -387,32 +387,42 @@ def drawMonth(month, cal, dwg, xpos, ypos):
     y = ypos + 2.0 * dwg.conf.l
     drawHalfMonth(11-month, cal, dwg, x, y, False)
 
-def generatePDF(cal):
+def generatePDF(cal, layout):
     conf=Configuration()
 
-    conf.month_width=69 # width of a single month, the other parameters will be calculated inside the setter
     months = 12
+
+    page_width=210.0    # A4 width in mm
+    page_height=297.0   # A4 height in mm
+
+    # Set the width of a month in dependence of the page layout
+    if layout == "2x6":
+        conf.month_width=(page_width-20)/(1+math.sqrt(3)) # width of a single month, the other parameters will be calculated inside the setter
+        months_per_page = 6
+    elif layout == "12x1":
+        conf.month_width=(page_height-20)/math.sqrt(3)
+        months_per_page = 1
 
     m=[]
     for month in range(months):
         m.append(ImageDraw(conf, conf.month_width, conf.month_height))
 
     # Determine all the text sizes
-    year_font_scale=m[0].tryText(text=str(cal['year']), font_scale_min=2, font_scale_max=4, width=conf.l, height=conf.k/2.0)
+    year_font_scale=m[0].tryText(text=str(cal['year']), font_scale_min=2, font_scale_max=8, width=conf.l, height=conf.k/2.0)
     print("Year font scale={}".format(year_font_scale))
     conf.year_font_scale=year_font_scale
 
-    month_font_scale = 4.0
+    month_font_scale = 8.0
     for  month in range(months):
-        month_font_scale = min(month_font_scale, m[0].tryText(text=cal['months'][month]['name'], font_scale_min=1.8, font_scale_max=4, width=conf.l*0.8, height=conf.k/2.0))
+        month_font_scale = min(month_font_scale, m[0].tryText(text=cal['months'][month]['name'], font_scale_min=1.8, font_scale_max=8, width=conf.l*0.8, height=conf.k/2.0))
     print("Month font scale={}".format(month_font_scale))
     conf.month_font_scale=month_font_scale
 
-    day_font_scale = 3
+    day_font_scale = 8
     for day in range(1,32):
-        day_font_scale = min(day_font_scale, m[0].tryText(text=str(day), font_scale_min=0.7, font_scale_max=3, width=conf.l * 0.8 / 7.0, height=conf.k / 3.0))
+        day_font_scale = min(day_font_scale, m[0].tryText(text=str(day), font_scale_min=0.7, font_scale_max=8, width=conf.l * 0.8 / 7.0, height=conf.k / 3.0))
     for day in list(calendar.day_name):
-        day_font_scale = min(day_font_scale, m[0].tryText(text=day[:2], font_scale_min=0.7, font_scale_max=3, width=conf.l * 0.8 / 7.0, height=conf.k / 3.0))
+        day_font_scale = min(day_font_scale, m[0].tryText(text=day[:2], font_scale_min=0.7, font_scale_max=8, width=conf.l * 0.8 / 7.0, height=conf.k / 3.0))
     print("Day font scale={}".format(day_font_scale))
     conf.day_font_scale=day_font_scale
 
@@ -420,11 +430,7 @@ def generatePDF(cal):
     for month in range(months):
         drawMonth(month=month, cal=cal, dwg=m[month], xpos=0, ypos=0)
 
-    page_width=210.0    # A4 width in mm
-    page_height=297.0   # A4 height in mm
-
     # Put the stuff on a page
-    months_per_page = 6
     pages = months // months_per_page
 
     # Create the empty pages
@@ -432,32 +438,41 @@ def generatePDF(cal):
     for page in range(pages):
         d.append(ImageDraw(conf, page_width, page_height))
 
-    # Center on the page
-    xoffset = ( page_width - ( conf.month_height + conf.month_width ) ) / 2
-    yoffset = ( page_height - ( 4 * conf.month_width ) ) / 2
+    if layout == "2x6":
+        # Center on the page
+        xoffset = ( page_width - ( conf.month_height + conf.month_width ) ) / 2
+        yoffset = ( page_height - ( 4 * conf.month_width ) ) / 2
 
-    # Put the months on the pages
-    m[0].rotate(-90)
-    d[0].composite(m[0], xoffset, yoffset + 3 * conf.month_width)
-    m[1].rotate(-90)
-    d[0].composite(m[1], xoffset, yoffset + 2 * conf.month_width)
-    m[2].rotate(-90)
-    d[0].composite(m[2], xoffset, yoffset + 1 * conf.month_width )
-    m[3].rotate(-90)
-    d[0].composite(m[3], xoffset, yoffset + 0 * conf.month_width)
-    d[0].composite(m[4], xoffset + conf.month_height, yoffset + 4*conf.month_width - conf.month_height)
-    d[0].composite(m[5], xoffset + conf.month_height, yoffset)
+        # Put the months on the pages
+        m[0].rotate(-90)
+        d[0].composite(m[0], xoffset, yoffset + 3 * conf.month_width)
+        m[1].rotate(-90)
+        d[0].composite(m[1], xoffset, yoffset + 2 * conf.month_width)
+        m[2].rotate(-90)
+        d[0].composite(m[2], xoffset, yoffset + 1 * conf.month_width )
+        m[3].rotate(-90)
+        d[0].composite(m[3], xoffset, yoffset + 0 * conf.month_width)
+        d[0].composite(m[4], xoffset + conf.month_height, yoffset + 4*conf.month_width - conf.month_height)
+        d[0].composite(m[5], xoffset + conf.month_height, yoffset)
 
-    m[6].rotate(-90)
-    d[1].composite(m[6], xoffset, yoffset + 3 * conf.month_width)
-    m[7].rotate(-90)
-    d[1].composite(m[7], xoffset, yoffset + 2 * conf.month_width)
-    m[8].rotate(-90)
-    d[1].composite(m[8], xoffset, yoffset + 1 * conf.month_width)
-    m[9].rotate(-90)
-    d[1].composite(m[9], xoffset, yoffset + 0 * conf.month_width)
-    d[1].composite(m[10], xoffset + conf.month_height, yoffset + 4*conf.month_width - conf.month_height)
-    d[1].composite(m[11], xoffset + conf.month_height, yoffset)
+        m[6].rotate(-90)
+        d[1].composite(m[6], xoffset, yoffset + 3 * conf.month_width)
+        m[7].rotate(-90)
+        d[1].composite(m[7], xoffset, yoffset + 2 * conf.month_width)
+        m[8].rotate(-90)
+        d[1].composite(m[8], xoffset, yoffset + 1 * conf.month_width)
+        m[9].rotate(-90)
+        d[1].composite(m[9], xoffset, yoffset + 0 * conf.month_width)
+        d[1].composite(m[10], xoffset + conf.month_height, yoffset + 4*conf.month_width - conf.month_height)
+        d[1].composite(m[11], xoffset + conf.month_height, yoffset)
+    elif layout == "12x1":
+        # Center on the page
+        xoffset = ( page_width - conf.month_width ) / 2
+        yoffset = ( page_height - conf.month_height ) / 2
+
+        # Put the month on the pages
+        for month in range(months):
+            d[month].composite(m[month], xoffset, yoffset)
 
     # Put the pages into PDF
     with Image() as sequence:
@@ -470,6 +485,7 @@ def main():
     parser.add_argument("year", help="year", type=int)
     parser.add_argument("--first", help="first day of the week (0=monday)", type=int, default=0)
     parser.add_argument("--locale", help="locale (default de_DE)", type=str, default="de_DE")
+    parser.add_argument("--layout", help="layout of the pages (default 2x6)", choices=["2x6", "12x1"], type=str, default="2x6")
     args = parser.parse_args()
 
     cal=m.collectYear(args.year, (args.first % 7), args.locale)
@@ -481,7 +497,7 @@ def main():
     cal=m.compressShortLines(cal, 6)
     print("COMPRESSED LAST LINE")
     m.printYear(cal)
-    generatePDF(cal)
+    generatePDF(cal, args.layout)
 
 
 
