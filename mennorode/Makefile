@@ -1,6 +1,6 @@
 V=./venv
 
-all:
+all: de_DE en_US it_IT
 
 venv: $(V)/touchfile
 
@@ -28,6 +28,4 @@ en_US:
 it_IT:
 	. $(V)/bin/activate ; python ./mennorode.py --first=0 --locale=$@ $(YEAR)
 
-ta:
-	. $(V)/bin/activate ; python ./a.py
 

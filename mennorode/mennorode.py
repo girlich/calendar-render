@@ -390,7 +390,7 @@ def drawMonth(month, cal, dwg, xpos, ypos):
 def generatePDF(cal):
     conf=Configuration()
 
-    conf.month_width=63 # width of a single month, the other parameters will be calculated insde the setter
+    conf.month_width=69 # width of a single month, the other parameters will be calculated inside the setter
     months = 12
 
     m=[]
@@ -424,28 +424,41 @@ def generatePDF(cal):
     page_height=297.0   # A4 height in mm
 
     # Put the stuff on a page
-    rows = 2
-    cols = 3
-    months_per_page = rows * cols
+    months_per_page = 6
     pages = months // months_per_page
+
+    # Create the empty pages
     d=[]
     for page in range(pages):
         d.append(ImageDraw(conf, page_width, page_height))
 
     # Center on the page
-    xoffset = ( page_width - cols*conf.month_width ) / 2
-    yoffset = ( page_height - rows*conf.month_height) / 2
+    xoffset = ( page_width - ( conf.month_height + conf.month_width ) ) / 2
+    yoffset = ( page_height - ( 4 * conf.month_width ) ) / 2
 
     # Put the months on the pages
-    for month in range(months):
-        p = month // months_per_page
-        i = month%cols
-        j = rows - 1 - (month%months_per_page) // cols
-        part = (month%months_per_page)
-        print("p={} m={} i={} j={} part={}".format(p, month, i, j, part))
+    m[0].rotate(-90)
+    d[0].composite(m[0], xoffset, yoffset + 3 * conf.month_width)
+    m[1].rotate(-90)
+    d[0].composite(m[1], xoffset, yoffset + 2 * conf.month_width)
+    m[2].rotate(-90)
+    d[0].composite(m[2], xoffset, yoffset + 1 * conf.month_width )
+    m[3].rotate(-90)
+    d[0].composite(m[3], xoffset, yoffset + 0 * conf.month_width)
+    d[0].composite(m[4], xoffset + conf.month_height, yoffset + 4*conf.month_width - conf.month_height)
+    d[0].composite(m[5], xoffset + conf.month_height, yoffset)
 
-        d[p].composite(m[month], xoffset+i*conf.month_width, yoffset+j*conf.month_height)
-   
+    m[6].rotate(-90)
+    d[1].composite(m[6], xoffset, yoffset + 3 * conf.month_width)
+    m[7].rotate(-90)
+    d[1].composite(m[7], xoffset, yoffset + 2 * conf.month_width)
+    m[8].rotate(-90)
+    d[1].composite(m[8], xoffset, yoffset + 1 * conf.month_width)
+    m[9].rotate(-90)
+    d[1].composite(m[9], xoffset, yoffset + 0 * conf.month_width)
+    d[1].composite(m[10], xoffset + conf.month_height, yoffset + 4*conf.month_width - conf.month_height)
+    d[1].composite(m[11], xoffset + conf.month_height, yoffset)
+
     # Put the pages into PDF
     with Image() as sequence:
         for page in range(pages):
