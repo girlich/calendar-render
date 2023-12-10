@@ -390,42 +390,53 @@ def drawMonth(month, cal, dwg, xpos, ypos):
 def generatePDF(cal):
     conf=Configuration()
 
-    page_width=210.0    # A4 width in mm
-    page_height=297.0   # A4 height in mm
-
-    conf.month_width=63 # width of a single month
-    
+    conf.month_width=63 # width of a single month, the other parameters will be calculated insde the setter
     months = 12
-    rows = 2
-    cols = 3
-    months_per_page = rows * cols
-    pages = months // months_per_page
 
-    d=[]
-    for page in range(pages):
-        d.append(ImageDraw(conf, page_width, page_height))
+    m=[]
+    for month in range(months):
+        m.append(ImageDraw(conf, conf.month_width, conf.month_height))
 
-    year_font_scale=d[0].tryText(text=str(cal['year']), font_scale_min=2, font_scale_max=4, width=conf.l, height=conf.k/2.0)
+    # Determine all the text sizes
+    year_font_scale=m[0].tryText(text=str(cal['year']), font_scale_min=2, font_scale_max=4, width=conf.l, height=conf.k/2.0)
     print("Year font scale={}".format(year_font_scale))
     conf.year_font_scale=year_font_scale
 
     month_font_scale = 4.0
     for  month in range(months):
-        month_font_scale = min(month_font_scale, d[0].tryText(text=cal['months'][month]['name'], font_scale_min=1.8, font_scale_max=4, width=conf.l*0.8, height=conf.k/2.0))
+        month_font_scale = min(month_font_scale, m[0].tryText(text=cal['months'][month]['name'], font_scale_min=1.8, font_scale_max=4, width=conf.l*0.8, height=conf.k/2.0))
     print("Month font scale={}".format(month_font_scale))
     conf.month_font_scale=month_font_scale
 
     day_font_scale = 3
     for day in range(1,32):
-        day_font_scale = min(day_font_scale, d[0].tryText(text=str(day), font_scale_min=0.7, font_scale_max=3, width=conf.l * 0.8 / 7.0, height=conf.k / 3.0))
+        day_font_scale = min(day_font_scale, m[0].tryText(text=str(day), font_scale_min=0.7, font_scale_max=3, width=conf.l * 0.8 / 7.0, height=conf.k / 3.0))
     for day in list(calendar.day_name):
-        day_font_scale = min(day_font_scale, d[0].tryText(text=day[:2], font_scale_min=0.7, font_scale_max=3, width=conf.l * 0.8 / 7.0, height=conf.k / 3.0))
+        day_font_scale = min(day_font_scale, m[0].tryText(text=day[:2], font_scale_min=0.7, font_scale_max=3, width=conf.l * 0.8 / 7.0, height=conf.k / 3.0))
     print("Day font scale={}".format(day_font_scale))
     conf.day_font_scale=day_font_scale
 
+    # Draw each month in its own image
+    for month in range(months):
+        drawMonth(month=month, cal=cal, dwg=m[month], xpos=0, ypos=0)
+
+    page_width=210.0    # A4 width in mm
+    page_height=297.0   # A4 height in mm
+
+    # Put the stuff on a page
+    rows = 2
+    cols = 3
+    months_per_page = rows * cols
+    pages = months // months_per_page
+    d=[]
+    for page in range(pages):
+        d.append(ImageDraw(conf, page_width, page_height))
+
+    # Center on the page
     xoffset = ( page_width - cols*conf.month_width ) / 2
     yoffset = ( page_height - rows*conf.month_height) / 2
 
+    # Put the months on the pages
     for month in range(months):
         p = month // months_per_page
         i = month%cols
@@ -433,8 +444,9 @@ def generatePDF(cal):
         part = (month%months_per_page)
         print("p={} m={} i={} j={} part={}".format(p, month, i, j, part))
 
-        drawMonth(month=month, cal=cal, dwg=d[p], xpos=xoffset+i*conf.month_width, ypos=yoffset+j*conf.month_height)
+        d[p].composite(m[month], xoffset+i*conf.month_width, yoffset+j*conf.month_height)
    
+    # Put the pages into PDF
     with Image() as sequence:
         for page in range(pages):
             sequence.sequence.append(d[page].image)
