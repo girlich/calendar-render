@@ -387,8 +387,8 @@ def drawMonth(month, cal, dwg, xpos, ypos):
     y = ypos + 2.0 * dwg.conf.l
     drawHalfMonth(11-month, cal, dwg, x, y, False)
 
-def generatePDF(cal, layout):
-    conf=Configuration()
+def generatePDF(cal, layout, dpi):
+    conf=Configuration(dpi=dpi)
 
     months = 12
 
@@ -481,11 +481,15 @@ def generatePDF(cal, layout):
         sequence.save(filename='mennorode-{}-{}.pdf'.format(str(cal['year']), cal['locale']))
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="mennorode",
+        description="Generate PDF files for the mennorode star calendar")
+
     parser.add_argument("year", help="year", type=int)
     parser.add_argument("--first", help="first day of the week (0=monday)", type=int, default=0)
     parser.add_argument("--locale", help="locale (default de_DE)", type=str, default="de_DE")
     parser.add_argument("--layout", help="layout of the pages (default 2x6)", choices=["2x6", "12x1"], type=str, default="2x6")
+    parser.add_argument("--dpi", help="image resolution (default 600)", type=int, default=600)
     args = parser.parse_args()
 
     cal=m.collectYear(args.year, (args.first % 7), args.locale)
@@ -497,7 +501,7 @@ def main():
     cal=m.compressShortLines(cal, 6)
     print("COMPRESSED LAST LINE")
     m.printYear(cal)
-    generatePDF(cal, args.layout)
+    generatePDF(cal, args.layout, args.dpi)
 
 
 
