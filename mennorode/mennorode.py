@@ -9,7 +9,7 @@ import math
 import os
 import re
 import sys
-from wand.image import Image
+from wand.image import Image, PAPERSIZE_MAP
 from wand.color import Color
 from wand.font import Font
 from wand.drawing import Drawing
@@ -387,13 +387,16 @@ def drawMonth(month, cal, dwg, xpos, ypos):
     y = ypos + 2.0 * dwg.conf.l
     drawHalfMonth(11-month, cal, dwg, x, y, False)
 
-def generatePDF(cal, layout, dpi, border):
+def generatePDF(cal, layout, dpi, border, _page):
     conf=Configuration(dpi=dpi)
 
-    months = 12
-
-    page_width=210.0    # A4 width in mm
-    page_height=297.0   # A4 height in mm
+    try:
+        width, height = PAPERSIZE_MAP[_page]
+    except:
+        sys.exit("error: unknown page format '{}'".format(_page))
+    page_width  = width * 25.4 / 72.0   # page width  in mm
+    page_height = height * 25.4 / 72.0  # page height in mm
+    print("page: {}, {}mm * {}mm".format(_page, page_width, page_height))
 
     # Set the width of a month in dependence of the page layout
     if layout == "2x6":
@@ -404,6 +407,7 @@ def generatePDF(cal, layout, dpi, border):
         months_per_page = 1
 
     m=[]
+    months = 12
     for month in range(months):
         m.append(ImageDraw(conf, conf.month_width, conf.month_height))
 
@@ -491,6 +495,7 @@ def main():
     parser.add_argument("--layout", help="layout of the pages (default 2x6)", choices=["2x6", "12x1"], type=str, default="2x6")
     parser.add_argument("--dpi", help="image resolution (default 600)", type=int, default=600)
     parser.add_argument("--border", help="border between image and paper edge in mm (default 10)", type=int, default=10)
+    parser.add_argument("--page", help="page format (default a4)", type=str, default="a4")
     args = parser.parse_args()
 
     cal=m.collectYear(args.year, (args.first % 7), args.locale)
@@ -502,7 +507,7 @@ def main():
     cal=m.compressShortLines(cal, 6)
     print("COMPRESSED LAST LINE")
     m.printYear(cal)
-    generatePDF(cal, args.layout, args.dpi, args.border)
+    generatePDF(cal, args.layout, args.dpi, args.border, args.page)
 
 
 
