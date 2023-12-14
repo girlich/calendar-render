@@ -387,7 +387,7 @@ def drawMonth(month, cal, dwg, xpos, ypos):
     y = ypos + 2.0 * dwg.conf.l
     drawHalfMonth(11-month, cal, dwg, x, y, False)
 
-def generatePDF(cal, layout, dpi):
+def generatePDF(cal, layout, dpi, border):
     conf=Configuration(dpi=dpi)
 
     months = 12
@@ -397,10 +397,10 @@ def generatePDF(cal, layout, dpi):
 
     # Set the width of a month in dependence of the page layout
     if layout == "2x6":
-        conf.month_width=(page_width-20)/(1+math.sqrt(3)) # width of a single month, the other parameters will be calculated inside the setter
+        conf.month_width=(page_width-2*border)/(1+math.sqrt(3)) # width of a single month, the other parameters will be calculated inside the setter
         months_per_page = 6
     elif layout == "12x1":
-        conf.month_width=(page_height-20)/math.sqrt(3)
+        conf.month_width=(page_height-2*border)/math.sqrt(3)
         months_per_page = 1
 
     m=[]
@@ -490,6 +490,7 @@ def main():
     parser.add_argument("--locale", help="locale (default de_DE)", type=str, default="de_DE")
     parser.add_argument("--layout", help="layout of the pages (default 2x6)", choices=["2x6", "12x1"], type=str, default="2x6")
     parser.add_argument("--dpi", help="image resolution (default 600)", type=int, default=600)
+    parser.add_argument("--border", help="border between image and paper edge in mm (default 10)", type=int, default=10)
     args = parser.parse_args()
 
     cal=m.collectYear(args.year, (args.first % 7), args.locale)
@@ -501,7 +502,7 @@ def main():
     cal=m.compressShortLines(cal, 6)
     print("COMPRESSED LAST LINE")
     m.printYear(cal)
-    generatePDF(cal, args.layout, args.dpi)
+    generatePDF(cal, args.layout, args.dpi, args.border)
 
 
 
