@@ -398,12 +398,17 @@ def generatePDF(cal, layout, dpi, border, _page):
     page_height = height * 25.4 / 72.0  # page height in mm
     print("page: {}, {}mm * {}mm".format(_page, page_width, page_height))
 
+    usable_width  = page_width  - 2 * border # usable width  in mm on a page
+    usable_height = page_height - 2 * border # usable height in mm on a page
+
     # Set the width of a month in dependence of the page layout
     if layout == "2x6":
-        conf.month_width=(page_width-2*border)/(1+math.sqrt(3)) # width of a single month, the other parameters will be calculated inside the setter
+        month_width_w = usable_width/(1+math.sqrt(3))
+        month_width_h = usable_height/4
+        conf.month_width=usable_width/(1+math.sqrt(3)) # width of a single month, the other parameters will be calculated inside the setter
         months_per_page = 6
     elif layout == "12x1":
-        conf.month_width=(page_height-2*border)/math.sqrt(3)
+        conf.month_width=usable_height/math.sqrt(3)
         months_per_page = 1
 
     m=[]
@@ -487,10 +492,11 @@ def generatePDF(cal, layout, dpi, border, _page):
 def main():
     parser = argparse.ArgumentParser(
         prog="mennorode",
-        description="Generate PDF files for the mennorode star calendar")
+        description="Generate PDF files for the mennorode star calendar",
+        epilog="The generated file has the name 'mennorode-{year}-{locale}.pdf")
 
     parser.add_argument("year", help="year", type=int)
-    parser.add_argument("--first", help="first day of the week (0=monday)", type=int, default=0)
+    parser.add_argument("--first", help="first day of the week (default 0 (Monday))", type=int, default=0)
     parser.add_argument("--locale", help="locale (default de_DE)", type=str, default="de_DE")
     parser.add_argument("--layout", help="layout of the pages (default 2x6)", choices=["2x6", "12x1"], type=str, default="2x6")
     parser.add_argument("--dpi", help="image resolution (default 600)", type=int, default=600)

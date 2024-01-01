@@ -11,7 +11,7 @@ $(V)/touchfile: requirements.txt
 	touch $@
 
 activate:
-	bash -c source $(V)/bin/activate
+	. $(V)/bin/activate && exec bash
 
 deactivate:
 	$(V)/bin/deactivate
